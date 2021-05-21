@@ -1,0 +1,56 @@
+{
+  "name": "@huddly/device-api-ip",
+  "version": "0.0.1",
+  "description": "Huddly SDK device api which uses grpc as transport protocol for communicating with the huddly network/ip cameras",
+  "keywords": [
+    "API",
+    "SDK",
+    "Huddly",
+    "Transport",
+    "GRPC",
+    "Discovery",
+    "Protocol",
+    "Network",
+    "IP"
+  ],
+  "author": "Huddly AS <npm@huddly.com>",
+  "homepage": "http://developer.huddly.com",
+  "license": "MIT",
+  "main": "./lib/src/index.js",
+  "types": "./lib/src/index.d.ts",
+  "directories": {
+    "lib": "lib",
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "npm run build-ts && npm run tslint",
+    "build-ts": "tsc --declaration",
+    "tslint": "tslint -c tslint.json -p tsconfig.json",
+    "test": "echo \"Error: no test specified\"",
+    "prettier": "./node_modules/.bin/prettier  --config ./.prettierrc --write src/**/*.ts",
+    "prettier-check": "./node_modules/.bin/prettier  --config ./.prettierrc --check src/**/*.ts"
+  },
+  "pre-commit": [
+    "prettier-check",
+    "tslint",
+    "build-ts",
+    "test"
+  ],
+  "dependencies": {
+    "@huddly/sdk": "^0.4.1",
+    "@types/node": "^13.1.2",
+    "await-sleep": "0.0.1",
+    "dgram": "^1.0.1",
+    "elementtree": "^0.1.7",
+    "node-uuid": "^1.4.8",
+    "typescript": "^3.7.4"
+  },
+  "devDependencies": {
+    "@types/elementtree": "^0.1.0",
+    "@types/node-uuid": "0.0.28",
+    "pre-commit": "^1.2.2",
+    "prettier": "^1.19.1",
+    "ts-node": "^8.5.4",
+    "tslint": "^6.1.1"
+  }
+}
