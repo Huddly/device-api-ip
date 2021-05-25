@@ -11,3 +11,5 @@ build
 cpp/binding
 prebuilds
 manifest.json
+
+src/proto/
