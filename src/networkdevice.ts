@@ -28,13 +28,13 @@ export default class HuddlyDevice {
     toString(): String {
         const deviceStringRep = [];
         deviceStringRep.push(
-            `Name: ${this.name}`,
-            `Manufactorer: ${this.manufacturer}`,
-            `Serial: ${this.serial}`,
-            `MAC Address: ${this.mac}`,
+            `Name: ${this.name} |`,
+            `Manufactorer: ${this.manufacturer} |`,
+            `Serial: ${this.serial} |`,
+            `MAC Address: ${this.mac} |`,
             `IPv4 Address: ${this.ip}`
         );
-        return deviceStringRep.join('');
+        return deviceStringRep.join(' ');
     }
 
     equals(device: HuddlyDevice): boolean {

@@ -44,7 +44,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
         for (let i = 0; i < detachedDevices.length; i++) {
             this.logger.info(
                 `Huddly ${detachedDevices[i].name} camera with [Serial: ${detachedDevices[i].serial}, MAC: ${detachedDevices[i].mac}] not available any longer`,
-                WsDiscovery.name
+                DeviceDiscoveryManager.name
             );
             if (this.eventEmitter) {
                 this.eventEmitter.emit('DETACH', detachedDevices[i]);
@@ -55,7 +55,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
         for (let i = 0; i < newDevices.length; i++) {
             this.logger.info(
                 `Found new Huddly ${newDevices[i].name} camera with [Serial: ${newDevices[i].serial}, MAC: ${newDevices[i].mac}] available at ${newDevices[i].ip}`,
-                WsDiscovery.name
+                DeviceDiscoveryManager.name
             );
             if (this.eventEmitter) {
                 this.eventEmitter.emit('ATTACH', newDevices[i]);
@@ -81,11 +81,43 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
         this.wsdd.close();
     }
 
-    deviceList(): HuddlyDevice[] {
-        throw new Error('Not supported yet');
+    deviceList(): Promise<HuddlyDevice[]> {
+        return new Promise(resolve => {
+            this.wsdd.probe((deviceList: HuddlyDevice[]) => {
+                // TODO: should we reject promise where there are no devices discoverd?
+                resolve(deviceList);
+            });
+        });
     }
 
-    getDevice(serialNumber: string = undefined) {
-        throw new Error('Not supported yet');
+    getDevice(serialNumber: string = undefined): Promise<HuddlyDevice | undefined> {
+        return new Promise((resolve, reject) => {
+            this.wsdd.probe((deviceList: HuddlyDevice[]) => {
+                if (serialNumber) {
+                    this.logger.debug(
+                        `Filtering the devices for the following serial number: ${serialNumber}`,
+                        DeviceDiscoveryManager.name
+                    );
+                    const matchedDevice: HuddlyDevice = this.discoveredDevices.find(
+                        d => d.serial === serialNumber
+                    );
+                    if (matchedDevice) {
+                        resolve(matchedDevice);
+                        return;
+                    }
+                } else if (this.discoveredDevices.length > 0) {
+                    this.logger.debug(
+                        `Choosing the first discovered device from the list as the serial number is not provided`,
+                        DeviceDiscoveryManager.name
+                    );
+                    resolve(deviceList[0]);
+                    return;
+                }
+
+                const msg: string = `Could not find device with serial ${serialNumber} amongst ${this.discoveredDevices.length} devices!`;
+                this.logger.warn(msg, DeviceDiscoveryManager.name);
+                reject(msg);
+            });
+        });
     }
 }
