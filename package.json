@@ -22,20 +22,47 @@
     "lib": "lib",
     "test": "tests"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Huddly/device-api-ip.git"
+  },
   "scripts": {
     "build": "npm run build-ts && npm run tslint",
     "build-ts": "tsc --declaration",
+    "watch-ts": "tsc -w",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
-    "test": "echo \"Error: no test specified\"",
     "prettier": "./node_modules/.bin/prettier  --config ./.prettierrc --write src/**/*.ts",
-    "prettier-check": "./node_modules/.bin/prettier  --config ./.prettierrc --check src/**/*.ts"
+    "prettier-check": "./node_modules/.bin/prettier  --config ./.prettierrc --check src/**/*.ts",
+    "test": "nyc mocha -r ts-node/register --recursive \"tests/**/*.spec.ts\" --exit",
+    "test-js": "mocha -r ts-node/register --recursive \"lib/tests/**/*.spec.js\""
   },
   "pre-commit": [
     "prettier-check",
     "tslint",
-    "build-ts",
-    "test"
+    "build-ts"
   ],
+  "nyc": {
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.tsx"
+    ],
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
+  },
+  "bugs": {
+    "url": "https://github.com/Huddly/device-api-ip/issues"
+  },
   "dependencies": {
     "@huddly/sdk": "^0.4.1",
     "@types/node": "^13.1.2",
@@ -47,7 +74,10 @@
   },
   "devDependencies": {
     "@types/elementtree": "^0.1.0",
+    "@types/mocha": "^5.2.7",
     "@types/node-uuid": "0.0.28",
+    "mocha": "^8.4.0",
+    "nyc": "^15.1.0",
     "pre-commit": "^1.2.2",
     "prettier": "^1.19.1",
     "ts-node": "^8.5.4",
