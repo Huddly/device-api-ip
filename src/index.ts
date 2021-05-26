@@ -13,16 +13,12 @@ export default class HuddlyDeviceApiIP implements IHuddlyDeviceAPI {
     logger: any;
     eventEmitter: EventEmitter;
     deviceDiscoveryManager: DeviceDiscoveryManager;
-    maxSearchRetries: Number;
-    alwaysRetry: boolean;
 
     private readonly SUPPORTED_DEVICES: String[] = ['L1'];
 
     constructor(opts: DeviceApiOpts = {}) {
         this.logger = opts.logger || new Logger(true);
         this.deviceDiscoveryManager = opts.manager || new DeviceDiscoveryManager(this.logger);
-        this.maxSearchRetries = opts.maxSearchRetries || 10;
-        this.alwaysRetry = opts.alwaysRetry || false;
     }
 
     async initialize() {}
@@ -37,8 +33,14 @@ export default class HuddlyDeviceApiIP implements IHuddlyDeviceAPI {
     }
 
     async getValidatedTransport(device: HuddlyDevice): Promise<IGrpcTransport> {
+        if (!device) {
+            this.logger.warn('Device is undefined!', HuddlyDeviceApiIP.name);
+            return undefined;
+        }
+
         if (device && (device.manufacturer != 'Huddly' || !this.SUPPORTED_DEVICES.includes(device.name))) {
-            this.logger.warn(`There is no supported transport implementation for device ${device.name} from manufacturer ${device.manufacturer}`, HuddlyDeviceApiIP.name);
+            this.logger.warn(`There is no supported ip/network transport implementation for given device!`, HuddlyDeviceApiIP.name);
+            this.logger.warn(`Device is: ${device.toString()}`);
             return undefined;
         }
 
@@ -49,6 +51,7 @@ export default class HuddlyDeviceApiIP implements IHuddlyDeviceAPI {
             return transport;
         } catch (e) { // TODO: catch specific exception
             this.logger.error(`GRPC Transport implementation not supported for device ${device.toString()}`, e, HuddlyDeviceApiIP.name);
+            return undefined;
         }
     }
 

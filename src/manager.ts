@@ -12,9 +12,16 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
     pollInterval: any;
     pollIntervalMs: number = 5000;
 
-    constructor(logger: any) {
-        this.logger = logger || new Logger(true);
-        this.wsdd = new WsDiscovery(this.logger, { timeout: 1000 });
+    // When you want the list directly without going through probe discovery.
+    get pairedDevices(): HuddlyDevice[] {
+        return this.discoveredDevices;
+    }
+
+    constructor(opts: any = {}, wsdd: WsDiscovery = undefined) {
+        this.pollIntervalMs = opts.pollInterval || 5000;
+        this.logger = opts.logger || new Logger(true);
+        this.wsdd = wsdd || new WsDiscovery(this.logger, { timeout: 1000 });
+        this.discoveredDevices = opts.preDiscoveredDevices || [];
     }
 
     registerForHotplugEvents(eventEmitter: EventEmitter) {
@@ -39,8 +46,9 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
     }
 
     probeHandler(deviceList: HuddlyDevice[]): void {
-        // emit attach events for all elements present in DeviceList but not preset in DiscoveredDevices
+        // Find which devices have been detached
         const detachedDevices: HuddlyDevice[] = this.listExcept(this.discoveredDevices, deviceList);
+        // Emit detach event for all devices in the above list
         for (let i = 0; i < detachedDevices.length; i++) {
             this.logger.info(
                 `Huddly ${detachedDevices[i].name} camera with [Serial: ${detachedDevices[i].serial}, MAC: ${detachedDevices[i].mac}] not available any longer`,
@@ -50,8 +58,9 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
                 this.eventEmitter.emit('DETACH', detachedDevices[i]);
             }
         }
-        // Emit detach event for all the devices in the above list
+        // Find which devices have been newly discovered
         const newDevices: HuddlyDevice[] = this.listExcept(deviceList, this.discoveredDevices);
+        // Emit attach event for all devices in the above list
         for (let i = 0; i < newDevices.length; i++) {
             this.logger.info(
                 `Found new Huddly ${newDevices[i].name} camera with [Serial: ${newDevices[i].serial}, MAC: ${newDevices[i].mac}] available at ${newDevices[i].ip}`,
@@ -61,7 +70,6 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
                 this.eventEmitter.emit('ATTACH', newDevices[i]);
             }
         }
-        // Emit attach event for all the devices in the above list
         const stillAlive: HuddlyDevice[] = this.listExcept(this.discoveredDevices, detachedDevices);
         // Discovered Devices list now represents the new cameras plus the existing ones still available (i.e. stillAlive + newDevices)
         this.discoveredDevices = stillAlive.concat(newDevices);
@@ -77,6 +85,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
     destroy(): void {
         if (this.pollInterval) {
             clearInterval(this.pollInterval);
+            this.pollInterval = undefined;
         }
         this.wsdd.close();
     }
@@ -98,14 +107,14 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
                         `Filtering the devices for the following serial number: ${serialNumber}`,
                         DeviceDiscoveryManager.name
                     );
-                    const matchedDevice: HuddlyDevice = this.discoveredDevices.find(
+                    const matchedDevice: HuddlyDevice = deviceList.find(
                         d => d.serial === serialNumber
                     );
                     if (matchedDevice) {
                         resolve(matchedDevice);
                         return;
                     }
-                } else if (this.discoveredDevices.length > 0) {
+                } else if (deviceList.length > 0) {
                     this.logger.debug(
                         `Choosing the first discovered device from the list as the serial number is not provided`,
                         DeviceDiscoveryManager.name
@@ -114,7 +123,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
                     return;
                 }
 
-                const msg: string = `Could not find device with serial ${serialNumber} amongst ${this.discoveredDevices.length} devices!`;
+                const msg: string = `Could not find device with serial ${serialNumber} amongst ${deviceList.length} devices!`;
                 this.logger.warn(msg, DeviceDiscoveryManager.name);
                 reject(msg);
             });

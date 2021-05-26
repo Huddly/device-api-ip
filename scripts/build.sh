@@ -10,8 +10,8 @@ function finish {
 }
 trap finish EXIT
 
-rm -rf ./src/proto ./lib/proto
-mkdir -p ./src/proto ./lib/proto proto
+rm -rf ./src/proto ./lib
+mkdir -p ./src/proto ./lib/src/proto proto
 
 cp node_modules/@huddly/sdk/proto/huddly.proto proto/
 
@@ -23,14 +23,15 @@ PROTOC_GEN_GRPC_PATH="./node_modules/.bin/grpc_tools_node_protoc_plugin"
 # JavaScript code generating
 protoc \
     --plugin="protoc-gen-grpc=${PROTOC_GEN_GRPC_PATH}" \
-    --js_out="import_style=commonjs,binary:./lib" \
-    --grpc_out="grpc_js:./lib" \
+    --js_out="import_style=commonjs,binary:./lib/src" \
+    --grpc_out="grpc_js:./lib/src" \
     proto/huddly.proto
 
 # Typescript code generating
 protoc \
     --plugin="protoc-gen-ts=${PROTOC_GEN_TS_PATH}" \
     --plugin="protoc-gen-grpc=${PROTOC_GEN_GRPC_PATH}" \
+    --js_out="import_style=commonjs,binary:./src" \
     --ts_out="service=grpc-node,mode=grpc-js:./src" \
     --grpc_out="grpc_js:./src" \
     proto/huddly.proto

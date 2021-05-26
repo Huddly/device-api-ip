@@ -11,7 +11,7 @@ export default class HuddlyDevice {
     metadataVersion: String;
     messageId: String;
 
-    constructor(deviceData: any) {
+    constructor(deviceData: any = {}) {
         this.name = deviceData.name;
         this.mac = deviceData.mac;
         this.ip = deviceData.ip;
@@ -28,19 +28,25 @@ export default class HuddlyDevice {
     toString(): String {
         const deviceStringRep = [];
         deviceStringRep.push(
-            `Name: ${this.name} |`,
-            `Manufactorer: ${this.manufacturer} |`,
-            `Serial: ${this.serial} |`,
-            `MAC Address: ${this.mac} |`,
-            `IPv4 Address: ${this.ip}`
+            `Name: ${this.name || 'Unknown'} |`,
+            `Manufactorer: ${this.manufacturer || 'Unknown'} |`,
+            `Serial: ${this.serial || 'Unknown'} |`,
+            `MAC Address: ${this.mac || 'Unknown'} |`,
+            `IPv4 Address: ${this.ip || 'Unknown'}`
         );
         return deviceStringRep.join(' ');
     }
 
     equals(device: HuddlyDevice): boolean {
         if (device != undefined) {
-            if (device.mac == this.mac || device.serial == this.serial || device.ip == this.ip) {
-                return true;
+            if (device.mac != undefined && this.mac != undefined) {
+                return device.mac == this.mac;
+            }
+            if (device.serial != undefined && this.serial != undefined) {
+                return device.serial == this.serial;
+            }
+            if (device.ip != undefined && this.ip != undefined) {
+                return device.ip == this.ip;
             }
         }
         return false;
