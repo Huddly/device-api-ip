@@ -5,8 +5,15 @@ set -eu
 BASEDIR=$(dirname "$0")
 cd ${BASEDIR}/../
 
+function finish {
+  rm -rf proto
+}
+trap finish EXIT
+
 rm -rf ./src/proto ./lib/proto
-mkdir -p ./src/proto ./lib/proto
+mkdir -p ./src/proto ./lib/proto proto
+
+cp node_modules/@huddly/sdk/proto/huddly.proto proto/
 
 # Path to this plugin, Note this must be an abolsute path on Windows (see #15)
 PROTOC_GEN_TS_PATH="./node_modules/.bin/protoc-gen-ts"
