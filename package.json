@@ -39,7 +39,8 @@
   "pre-commit": [
     "prettier-check",
     "tslint",
-    "build-ts"
+    "build",
+    "test"
   ],
   "nyc": {
     "include": [
