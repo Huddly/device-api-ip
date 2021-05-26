@@ -4,6 +4,8 @@ import * as grpc from '@grpc/grpc-js';
 import { HuddlyServiceClient } from './proto/huddly_grpc_pb';
 import HuddlyDevice from './networkdevice';
 import Logger from '@huddly/sdk/lib/src/utilitis/logger';
+import { Chunk, CnnFeature, CNNStatus, Feature, LogFile, LogFiles } from './proto/huddly_pb';
+import { TextDecoder } from 'util';
 
 export default class GrpcTransport extends EventEmitter implements IGrpcTransport {
     logger: any;
@@ -60,4 +62,35 @@ export default class GrpcTransport extends EventEmitter implements IGrpcTranspor
         }
         return Promise.resolve();
     }
+
+    getLogFiles(): Promise<String> {
+        return new Promise((resolve, reject) => {
+            const logFile = new LogFile();
+            logFile.setFile(LogFiles.APP);
+            logFile.setKeepLog(true);
+            let data = '';
+
+            const stream = this._grpcClient.getLogFiles(logFile);
+            stream.on('data', (comment: Chunk) => {
+                const string = new TextDecoder().decode(comment.getContent_asU8());
+                console.log(`DATA DATA DATA (${string}`);
+                data += string;
+            });
+            stream.on('end', () => resolve(data));
+            stream.on('error', reject);
+        });
+    }
+
+    getProductInfo(): Promise<any> {
+        return new Promise((resolve, reject) => {
+            const feature = new CnnFeature();
+            feature.setFeature(Feature.AUTOZOOM);
+            this._grpcClient.getCnnFeatureStatus(feature, (err: grpc.ServiceError, status: CNNStatus) => {
+                if (err) {
+                    reject();
+                }
+                resolve(status.getAzStatus());
+            });
+        });
+      }
 }

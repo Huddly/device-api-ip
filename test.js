@@ -1,32 +1,38 @@
-var Manager = require('./lib/manager').default;
+var Api = require('./lib/index').default;
 const EventEmitter = require('events');
-
 const main = async () => {
-
-    var manager = new Manager();
-
+    var api = new Api();
     class MyEmitter extends EventEmitter {}
     const myEmitter = new MyEmitter();
-    manager.registerForHotplugEvents(myEmitter);
+    let grpcTransport;
+    let mydevice;
+    myEmitter.on('ATTACH', async (device) => {
+        mydevice = device;
+        api.getValidatedTransport(device)
+        .then(async (transport) => {
+            grpcTransport = transport;
+            grpcClient = transport.grpcClient;
 
-    /*
-    // List devices example
+            const l = await transport.getLogFiles();
 
-    const list = await manager.deviceList();
-    console.log(`List contains ${list.length} devices `);
-    list.forEach((d) => {
-        console.log(d.toString());
-    })
-    */
+            console.log('----------------LO LOG LOG ', l);
 
-    /*
-    // Get device example
-    manager.getDevice('12101A0026').then((device) => {
-        console.log("Device with serial 12101A0026 found")
-    }).catch((reason) => {
-        console.log(reason);
+            const a = await transport.getProductInfo();
+            console.log('----------------', a);
+            // TODO: Perform actions
+            console.log('We can perform actions on the device now');
+            console.log(mydevice);
+        }).catch((e) => {
+            console.log('Unable to get transport for device');
+            console.error(e);
+        })
     });
-    */
+    myEmitter.on('DETACH', (device) => {
+        if (mydevice && mydevice.equals(device)) {
+            console.log('Closing grpc channel on device');
+            grpcTransport.close();
+        }
+    });
+    api.registerForHotplugEvents(myEmitter);
 }
-
 main();

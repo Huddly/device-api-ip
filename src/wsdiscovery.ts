@@ -1,6 +1,6 @@
 import Logger from '@huddly/sdk/lib/src/utilitis/logger';
 import HuddlyDevice from './networkdevice';
-import { EventEmitter } from 'stream';
+import { EventEmitter } from 'events';
 import et from 'elementtree';
 import { v4 as uuidv4 } from 'node-uuid';
 import dgram from 'dgram';
