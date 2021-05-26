@@ -1,13 +1,11 @@
-import ITransport from '@huddly/sdk/lib/src/interfaces/iTransport';
+import IGrpcTransport from '@huddly/sdk/lib/src/interfaces/IGrpcTransport';
 import { EventEmitter } from 'events';
 import * as grpc from '@grpc/grpc-js';
 import { HuddlyServiceClient } from './proto/huddly_grpc_pb';
-import * as huddly from './proto/huddly_pb';
 import HuddlyDevice from './networkdevice';
-import { Empty } from 'google-protobuf/google/protobuf/empty_pb';
 import Logger from '@huddly/sdk/lib/src/utilitis/logger';
 
-export default class GrpcTransport extends EventEmitter implements ITransport {
+export default class GrpcTransport extends EventEmitter implements IGrpcTransport {
     logger: any;
     eventLoopSpeed: number;
 
@@ -61,46 +59,5 @@ export default class GrpcTransport extends EventEmitter implements ITransport {
             this._grpcClient.close();
         }
         return Promise.resolve();
-    }
-
-    setEventLoopReadSpeed(timeout?: number): void {
-        throw new Error('Method not supported');
-    }
-
-    initEventLoop(): void {
-        throw new Error('Method not supported');
-    }
-
-    startListen(): Promise<void> {
-        throw new Error('Method not supported');
-    }
-
-    receiveMessage(message: string, timeout?: number): Promise<any> {
-        throw new Error('Method not supported');
-    }
-
-    read(receiveMsg?: string, timeout?: number): Promise<any> {
-        throw new Error('Method not supported');
-    }
-
-    write(cmd: string, payload?: Buffer): Promise<any> {
-        throw new Error('Method not supported');
-    }
-
-    subscribe(command: string): Promise<any> {
-        throw new Error('Method not supported');
-    }
-
-    unsubscribe(command: string): Promise<any> {
-        throw new Error('Method not supported');
-    }
-
-    clear(): Promise<any> {
-        throw new Error('Method not supported');
-    }
-
-
-    stopEventLoop(): Promise<void> {
-        throw new Error('Method not supported');
     }
 }
