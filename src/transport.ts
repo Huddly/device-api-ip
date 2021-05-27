@@ -25,11 +25,11 @@ export default class GrpcTransport extends EventEmitter implements IGrpcTranspor
     }
 
     get grpcConnectionDeadlineSeconds(): number {
-        return this.grpcConnectionDeadlineSeconds;
+        return this._grpcConnectionDeadlineSeconds;
     }
 
-    set grpcConnectionDeadlineSeconds(seconds: number) {
-        this._grpcConnectionDeadlineSeconds = seconds;
+    set grpcConnectionDeadlineSeconds(value: number) {
+        this._grpcConnectionDeadlineSeconds = value;
     }
 
     get grpcClient(): HuddlyServiceClient {

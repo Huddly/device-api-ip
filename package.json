@@ -31,8 +31,8 @@
     "build-ts": "tsc --declaration",
     "watch-ts": "tsc -w",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
-    "prettier": "./node_modules/.bin/prettier  --config ./.prettierrc --write src/**/*.ts",
-    "prettier-check": "./node_modules/.bin/prettier  --config ./.prettierrc --check src/**/*.ts",
+    "prettier": "./node_modules/.bin/prettier --config ./.prettierrc --write src/**/*.ts tests/**/*.spec.ts",
+    "prettier-check": "./node_modules/.bin/prettier --config ./.prettierrc --check src/**/*.ts tests/**/*.spec.ts",
     "test": "nyc mocha -r ts-node/register --recursive \"tests/**/*.spec.ts\" --exit",
     "test-js": "mocha -r ts-node/register --recursive \"lib/tests/**/*.spec.js\""
   },
@@ -80,6 +80,7 @@
     "@types/google-protobuf": "^3.15.2",
     "@types/mocha": "^5.2.7",
     "@types/node-uuid": "0.0.28",
+    "@types/sinon": "^10.0.1",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "chai-things": "^0.2.0",
