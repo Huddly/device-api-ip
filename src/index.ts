@@ -45,14 +45,13 @@ export default class HuddlyDeviceApiIP implements IHuddlyDeviceAPI {
         try {
             const transport = await this.getTransport(device);
             // TODO: some sort of handshake ?
-            this.logger.info('Transport protocol is GRPC', HuddlyDeviceApiIP.name);
             return transport;
-        } catch (e) { // TODO: catch specific exception
+        } catch (e) { // TODO: catch specific exception™
             this.logger.error(`GRPC Transport implementation not supported for device ${device.toString()}`, e, HuddlyDeviceApiIP.name);
         }
     }
 
-    async getTransport(device: HuddlyDevice): Promise<IGrpcTransport> {
+    async getTransport(device: HuddlyDevice): Promise<GrpcTransport> {
         const transport = new GrpcTransport(device, this.logger);
         await transport.init();
         return transport;

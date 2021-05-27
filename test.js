@@ -6,6 +6,7 @@ const main = async () => {
     const myEmitter = new MyEmitter();
     let grpcTransport;
     let mydevice;
+    console.log('-------------- wait for attach --------------');
     myEmitter.on('ATTACH', async (device) => {
         mydevice = device;
         api.getValidatedTransport(device)

@@ -84,11 +84,9 @@ export default class WsDiscovery extends EventEmitter {
         const discoveredDevices: HuddlyDevice[] = [];
         const onProbeResponseHandler = (message: any) => {
             const tree = et.parse(message.toString());
-
             const relatesTo = tree.findtext('*/wsa:RelatesTo');
             if (relatesTo === messageId) {
                 const matches = tree.findall('*/*/wsdd:ProbeMatch');
-
                 matches.forEach(match => {
                     const ipv4Addr = match
                         .findtext('wsdd:XAddrs')
