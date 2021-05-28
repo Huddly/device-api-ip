@@ -24,6 +24,7 @@ export default class HuddlyDevice {
         this.manufacturer = deviceData.manufacturer;
         this.metadataVersion = deviceData.metadataVersion;
         this.messageId = deviceData.messageId;
+        this.productId = deviceData.pid;
     }
 
     toString(): String {

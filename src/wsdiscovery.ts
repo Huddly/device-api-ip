@@ -5,6 +5,8 @@ import et from 'elementtree';
 import { v4 as uuidv4 } from 'node-uuid';
 import dgram from 'dgram';
 
+export const HUDDLY_L1_PID = 3E9; // 1001 for L1/Ace
+
 export default class WsDiscovery extends EventEmitter {
   logger: any;
   maxDelay: number;
@@ -40,6 +42,15 @@ export default class WsDiscovery extends EventEmitter {
       numericMac <= this.HUDDLY_MAC_SERIES_END
       ? this.HUDDLY_MANUFACTURER_NAME
       : '';
+  }
+
+  networkDevicePID(name: String): number {
+    switch (name) {
+      case 'L1':
+        return HUDDLY_L1_PID;
+      default:
+        return 0x00;
+    }
   }
 
   parseOnvifScopes(scopes: String[], name: String, defaultValue: String[] = ['N/A']): String[] {
@@ -111,6 +122,7 @@ export default class WsDiscovery extends EventEmitter {
             manufacturer: this.manufacturerFromMac(macAddr),
             metadataVersion: match.findtext('wsdd:MetadataVersion'),
             messageId: tree.findtext('*/wsa:MessageID'),
+            pid: this.networkDevicePID(name),
           };
           const device = new HuddlyDevice(deviceData);
           discoveredDevices.push(device);
