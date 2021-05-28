@@ -51,7 +51,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
         // Emit detach event for all devices in the above list
         for (let i = 0; i < detachedDevices.length; i++) {
             this.logger.info(
-                `Huddly ${detachedDevices[i].name} camera with [Serial: ${detachedDevices[i].serial}, MAC: ${detachedDevices[i].mac}] not available any longer`,
+                `Huddly ${detachedDevices[i].name} camera with [Serial: ${detachedDevices[i].serialNumber}, MAC: ${detachedDevices[i].mac}] not available any longer`,
                 DeviceDiscoveryManager.name
             );
             if (this.eventEmitter) {
@@ -63,7 +63,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
         // Emit attach event for all devices in the above list
         for (let i = 0; i < newDevices.length; i++) {
             this.logger.info(
-                `Found new Huddly ${newDevices[i].name} camera with [Serial: ${newDevices[i].serial}, MAC: ${newDevices[i].mac}] available at ${newDevices[i].ip}`,
+                `Found new Huddly ${newDevices[i].name} camera with [Serial: ${newDevices[i].serialNumber}, MAC: ${newDevices[i].mac}] available at ${newDevices[i].ip}`,
                 DeviceDiscoveryManager.name
             );
             if (this.eventEmitter) {
@@ -108,7 +108,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
                         DeviceDiscoveryManager.name
                     );
                     const matchedDevice: HuddlyDevice = deviceList.find(
-                        d => d.serial === serialNumber
+                        d => d.serialNumber === serialNumber
                     );
                     if (matchedDevice) {
                         resolve(matchedDevice);

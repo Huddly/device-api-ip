@@ -21,7 +21,7 @@ const dummyLogger = {
 const mockedDevices: HuddlyDevice[] = [
     new HuddlyDevice({
         name: 'L1',
-        serial: '1234566445',
+        serialNumber: '1234566445',
         manufacturer: 'Huddly',
         mac: 'FF:FF:FF:FF:FF:FF',
         ip: '',
@@ -34,7 +34,7 @@ const mockedDevices: HuddlyDevice[] = [
     }),
     new HuddlyDevice({
         name: 'DUMMY',
-        serial: '12000045',
+        serialNumber: '12000045',
         manufacturer: 'JohnDoe Co',
         mac: 'FF:FF:FF:FF:FF:FF',
         ip: '',

@@ -189,7 +189,7 @@ describe('WsDiscovery', () => {
                 types: ['video_encoder', 'ptz'],
                 hardware: '810-00011-MBLK',
                 location: 'ANY',
-                serial: '12101A0029',
+                serialNumber: '12101A0029',
                 mac: '90:E2:FC:90:12:EC',
                 metaDataVersion: '1.2',
             };
@@ -202,7 +202,7 @@ describe('WsDiscovery', () => {
           <SOAP-ENV:Body>
             <wsdd:ProbeMatches>
               <wsdd:ProbeMatch>
-                <wsdd:Scopes>onvif://www.onvif.org/name/${data.name} onvif://www.onvif.org/Profile/${data.profile} onvif://www.onvif.org/type/${data.types[0]} onvif://www.onvif.org/type/${data.types[1]} onvif://www.onvif.org/hardware/${data.hardware} onvif://www.onvif.org/location/${data.location} onvif://www.onvif.org/serial/${data.serial} onvif://www.onvif.org/mac/${data.mac}</wsdd:Scopes>
+                <wsdd:Scopes>onvif://www.onvif.org/name/${data.name} onvif://www.onvif.org/Profile/${data.profile} onvif://www.onvif.org/type/${data.types[0]} onvif://www.onvif.org/type/${data.types[1]} onvif://www.onvif.org/hardware/${data.hardware} onvif://www.onvif.org/location/${data.location} onvif://www.onvif.org/serial/${data.serialNumber} onvif://www.onvif.org/mac/${data.mac}</wsdd:Scopes>
                 <wsdd:XAddrs>http://${data.ip}:1000/onvif/device_service</wsdd:XAddrs>
                 <wsdd:MetadataVersion>${data.metaDataVersion}</wsdd:MetadataVersion>
               </wsdd:ProbeMatch>
@@ -215,7 +215,7 @@ describe('WsDiscovery', () => {
             const cb = (devices: HuddlyDevice[]) => {
                 expect(devices.length).to.equal(1);
                 expect(devices[0].ip).to.equal(data.ip);
-                expect(devices[0].serial).to.equal(data.serial);
+                expect(devices[0].serialNumber).to.equal(data.serialNumber);
                 expect(devices[0].name).to.equal(data.name);
                 expect(devices[0].modelName).to.equal(data.hardware);
                 expect(devices[0].types).to.deep.equal(data.types);

@@ -185,9 +185,9 @@ describe('DeviceDiscoveryManager', () => {
     });
 
     describe('#getDevice', () => {
-        const _D1: HuddlyDevice = new HuddlyDevice({ mac: 'A1', serial: '12345' });
-        const _D2: HuddlyDevice = new HuddlyDevice({ mac: 'A2', serial: '56789' });
-        const _D3: HuddlyDevice = new HuddlyDevice({ mac: 'B1', serial: '98765' });
+        const _D1: HuddlyDevice = new HuddlyDevice({ mac: 'A1', serialNumber: '12345' });
+        const _D2: HuddlyDevice = new HuddlyDevice({ mac: 'A2', serialNumber: '56789' });
+        const _D3: HuddlyDevice = new HuddlyDevice({ mac: 'B1', serialNumber: '98765' });
         const probeList: HuddlyDevice[] = [_D1, _D2, _D3];
         beforeEach(() => {
             dummyWsdd.probe.callsFake(cb => {
@@ -195,7 +195,7 @@ describe('DeviceDiscoveryManager', () => {
             });
         });
         it('should resolve device if the given serial matches', async () => {
-            const found: HuddlyDevice = await devicemanager.getDevice(_D3.serial.toString());
+            const found: HuddlyDevice = await devicemanager.getDevice(_D3.serialNumber.toString());
             expect(found).to.equal(_D3);
         });
         it('should resolve with first discovered device if serial not specified', async () => {

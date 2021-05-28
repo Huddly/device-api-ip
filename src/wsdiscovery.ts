@@ -98,11 +98,12 @@ export default class WsDiscovery extends EventEmitter {
             .split(' ');
 
           const macAddr = this.parseOnvifScopes(scopes, 'mac')[0];
+          const name = this.parseOnvifScopes(scopes, 'name', ['Unknown_Device'])[0];
           const deviceData = {
-            name: this.parseOnvifScopes(scopes, 'name', ['Unknown_Device'])[0],
+            name: name,
             mac: macAddr,
             ip: ipv4Addr[0],
-            serial: this.parseOnvifScopes(scopes, 'serial')[0],
+            serialNumber: this.parseOnvifScopes(scopes, 'serial')[0],
             types: this.parseOnvifScopes(scopes, 'type'),
             scopes: scopes,
             xaddrs: match.findtext('wsdd:XAddrs'),

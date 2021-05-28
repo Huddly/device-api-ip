@@ -11,7 +11,7 @@ describe('HuddlyDeviceApiIP', () => {
             expect(device.name).to.equal(undefined);
             expect(device.mac).to.equal(undefined);
             expect(device.ip).to.equal(undefined);
-            expect(device.serial).to.equal(undefined);
+            expect(device.serialNumber).to.equal(undefined);
             expect(device.types).to.equal(undefined);
             expect(device.scopes).to.equal(undefined);
             expect(device.xaddrs).to.equal(undefined);
@@ -26,14 +26,14 @@ describe('HuddlyDeviceApiIP', () => {
                 mac: 'A1:B2:C3:D4:E5:f6',
                 manufacturer: 'Huddly',
                 ip: '1.2.3.4',
-                serial: '156434325642',
+                serialNumber: '156434325642',
                 modelName: 'ORANGE',
             };
             const device: HuddlyDevice = new HuddlyDevice(data);
             expect(device.name).to.equal(data.name);
             expect(device.mac).to.equal(data.mac);
             expect(device.ip).to.equal(data.ip);
-            expect(device.serial).to.equal(data.serial);
+            expect(device.serialNumber).to.equal(data.serialNumber);
             expect(device.modelName).to.equal(data.modelName);
             expect(device.manufacturer).to.equal(data.manufacturer);
         });
@@ -46,11 +46,11 @@ describe('HuddlyDeviceApiIP', () => {
                 mac: 'A1:B2:C3:D4:E5:F6',
                 manufacturer: 'Huddly',
                 ip: '1.2.3.4',
-                serial: '156434325642',
+                serialNumber: '156434325642',
                 modelName: 'ORANGE',
             };
             const device: HuddlyDevice = new HuddlyDevice(data);
-            const expectedStr = `Name: ${device.name} | Manufactorer: ${device.manufacturer} | Serial: ${device.serial} | MAC Address: ${device.mac} | IPv4 Address: ${device.ip}`;
+            const expectedStr = `Name: ${device.name} | Manufactorer: ${device.manufacturer} | Serial: ${device.serialNumber} | MAC Address: ${device.mac} | IPv4 Address: ${device.ip}`;
             expect(device.toString()).to.equal(expectedStr);
         });
         it('should return a string representation of a unknown device', () => {
@@ -68,8 +68,8 @@ describe('HuddlyDeviceApiIP', () => {
                 expect(d1.equals(d2)).to.equal(true);
             });
             it('when mac is missing but serial is same', () => {
-                const d1 = new HuddlyDevice({ serial: '156434325642' });
-                const d2 = new HuddlyDevice({ serial: '156434325642' });
+                const d1 = new HuddlyDevice({ serialNumber: '156434325642' });
+                const d2 = new HuddlyDevice({ serialNumber: '156434325642' });
                 expect(d1.equals(d2)).to.equal(true);
             });
             it('when mac & serial is missing but ip is same', () => {
@@ -89,8 +89,8 @@ describe('HuddlyDeviceApiIP', () => {
                 expect(d1.equals(d2)).to.equal(false);
             });
             it('when mac is null but serial is different', () => {
-                const d1 = new HuddlyDevice({ serial: '156434325642' });
-                const d2 = new HuddlyDevice({ serial: '456434325642' });
+                const d1 = new HuddlyDevice({ serialNumber: '156434325642' });
+                const d2 = new HuddlyDevice({ serialNumber: '456434325642' });
                 expect(d1.equals(d2)).to.equal(false);
             });
             it('when mac & serial are null but ip is different', () => {
