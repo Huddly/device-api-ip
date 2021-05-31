@@ -4,6 +4,7 @@ import * as grpc from '@grpc/grpc-js';
 import { HuddlyServiceClient } from './proto/huddly_grpc_pb';
 import HuddlyDevice from './networkdevice';
 import Logger from '@huddly/sdk/lib/src/utilitis/logger';
+import { Empty } from 'google-protobuf/google/protobuf/empty_pb';
 
 export default class GrpcTransport extends EventEmitter implements IGrpcTransport {
     logger: any;
@@ -34,6 +35,11 @@ export default class GrpcTransport extends EventEmitter implements IGrpcTranspor
 
     get grpcClient(): HuddlyServiceClient {
         return this._grpcClient;
+    }
+
+    get empty(): Empty {
+        // Workaround until we figure out why the google proto datatypes dont match across sdk and device-api-ip
+        return new Empty();
     }
 
     init(): Promise<void> {
