@@ -1,5 +1,6 @@
 import chai from 'chai';
 import HuddlyDevice from './../src/networkdevice';
+import { HUDDLY_L1_PID } from './../src/wsdiscovery';
 
 const expect = chai.expect;
 chai.should();
@@ -57,6 +58,60 @@ describe('HuddlyDeviceApiIP', () => {
             const device: HuddlyDevice = new HuddlyDevice();
             const expectedStr = `Name: Unknown | Manufactorer: Unknown | Serial: Unknown | MAC Address: Unknown | IPv4 Address: Unknown`;
             expect(device.toString()).to.equal(expectedStr);
+        });
+    });
+
+    describe('#infoObject', () => {
+        it('should return an object/map/dict representing network device information', () => {
+            const data = {
+                name: 'L1',
+                mac: 'A1:B2:C3:D4:E5:F6',
+                manufacturer: 'Huddly',
+                ip: '1.2.3.4',
+                serialNumber: '156434325642',
+                modelName: 'ORANGE',
+                pid: HUDDLY_L1_PID,
+            };
+            const device: HuddlyDevice = new HuddlyDevice(data);
+            expect(device.infoObject()).to.deep.equal({
+                name: data.name,
+                mac: data.mac,
+                ipv4: data.ip,
+                serialNumber: data.serialNumber,
+                modelName: data.modelName,
+                manufacturer: data.manufacturer,
+                productId: data.pid,
+            });
+        });
+    });
+
+    describe('#fullObject', () => {
+        it('should return an object/map/dict representing network device information', () => {
+            const data = {
+                name: 'L1',
+                mac: 'A1:B2:C3:D4:E5:F6',
+                manufacturer: 'Huddly',
+                ip: '1.2.3.4',
+                serialNumber: '156434325642',
+                modelName: 'ORANGE',
+                pid: HUDDLY_L1_PID,
+                types: ['a', 'b'],
+                scopes: ['c', 'd'],
+                metadataVersion: '3232',
+            };
+            const device: HuddlyDevice = new HuddlyDevice(data);
+            expect(device.fullObject()).to.deep.equal({
+                name: data.name,
+                mac: data.mac,
+                ipv4: data.ip,
+                serialNumber: data.serialNumber,
+                modelName: data.modelName,
+                manufacturer: data.manufacturer,
+                productId: data.pid,
+                types: data.types,
+                scopes: data.scopes,
+                metadataVersion: data.metadataVersion,
+            });
         });
     });
 

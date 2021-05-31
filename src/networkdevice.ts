@@ -39,6 +39,27 @@ export default class HuddlyDevice {
         return deviceStringRep.join(' ');
     }
 
+    infoObject(): any {
+        return {
+            name: this.name,
+            mac: this.mac,
+            ipv4: this.ip,
+            serialNumber: this.serialNumber,
+            modelName: this.modelName,
+            manufacturer: this.manufacturer,
+            productId: this.productId
+        };
+    }
+
+    fullObject(): any {
+        return {
+            ...this.infoObject(),
+            types: this.types,
+            scopes: this.scopes,
+            metadataVersion: this.metadataVersion,
+        };
+    }
+
     equals(device: HuddlyDevice): boolean {
         if (device != undefined) {
             if (device.mac != undefined && this.mac != undefined) {
