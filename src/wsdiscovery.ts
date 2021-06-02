@@ -88,7 +88,7 @@ export default class WsDiscovery extends EventEmitter {
   }
 
   probe(callback: any = () => { }): void {
-    const self = this;
+    const selfur = this;
 
     const messageId = this.generateMessageId();
     const body = this.makeDiscoveryBody(messageId);
@@ -133,7 +133,7 @@ export default class WsDiscovery extends EventEmitter {
     };
     this.socket.on('message', onProbeResponseHandler);
     setTimeout(() => {
-      self.socket.removeListener('message', onProbeResponseHandler);
+      selfur.socket.removeListener('message', onProbeResponseHandler);
       callback(discoveredDevices);
     }, this.opts.timeout);
 
