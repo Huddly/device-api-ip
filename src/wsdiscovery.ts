@@ -4,6 +4,7 @@ import { EventEmitter } from 'events';
 import et from 'elementtree';
 import { v4 as uuidv4 } from 'node-uuid';
 import dgram from 'dgram';
+import { networkInterfaces } from 'os';
 
 export const HUDDLY_L1_PID = 3e9; // 1001 for L1/Ace
 
@@ -23,9 +24,32 @@ export default class WsDiscovery extends EventEmitter {
         this.opts.timeout = options.timeout || 5000;
 
         this.socket = options.socket || dgram.createSocket('udp4');
+        this.socket.bind(() => {
+            const baseAddress = this.getBaseAddress();
+            if (baseAddress || this.opts.multicastInterfaceAddr) {
+                const multicastInterfaceAddr = this.opts.multicastInterfaceAddr || baseAddress;
+                this.socket.setMulticastInterface(multicastInterfaceAddr);
+            }
+        });
         this.socket.on('error', err => {
             this.emit('ERROR', err);
         });
+    }
+
+    getBaseAddress(): string {
+        const interfaceMap = networkInterfaces();
+        let baseIp;
+        for (const [k, v] of Object.entries(interfaceMap)) {
+            if (v instanceof Array) {
+                v.forEach((networkInterface: any) => {
+                    if (networkInterface.family === 'IPv4' && this.manufacturerFromMac(networkInterface.mac)) {
+                        baseIp = networkInterface.address;
+                    }
+                });
+            }
+        }
+
+        return baseIp;
     }
 
     generateMessageId(): String {
@@ -87,7 +111,7 @@ export default class WsDiscovery extends EventEmitter {
         return Buffer.from(body);
     }
 
-    probe(callback: any = () => {}): void {
+    probe(callback: any = () => { }): void {
         const self = this;
 
         const messageId = this.generateMessageId();

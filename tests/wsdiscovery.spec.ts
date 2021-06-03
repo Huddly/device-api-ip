@@ -8,6 +8,7 @@ import { HUDDLY_L1_PID } from './../src/wsdiscovery';
 import dgram from 'dgram';
 import uuid from 'node-uuid';
 import { EventEmitter } from 'events';
+import os from 'os';
 
 const expect = chai.expect;
 chai.should();
@@ -15,7 +16,52 @@ const dummyLogger = sinon.createStubInstance(Logger);
 class DummySocket extends EventEmitter {
     send() {}
     close() {}
+    bind(cb) {
+        cb();
+    }
+    setMulticastInterface() {}
 }
+
+const dummyNetworkInterfaces = {
+    baseKey: [
+        {
+            address: 'fe80::b4d4:8905:c723:9e36',
+            netmask: 'ffff:ffff:ffff:ffff::',
+            family: 'IPv6',
+            mac: '90:e2:fc:90:2d:a9',
+            scopeid: 13,
+            internal: false,
+            cidr: 'fe80::b4d4:8905:c723:9e36/64',
+        },
+        {
+            address: '169.254.158.54',
+            netmask: '255.255.0.0',
+            family: 'IPv4',
+            mac: '90:e2:fc:90:2d:a9',
+            internal: false,
+            cidr: '169.254.158.54/16',
+        },
+    ],
+    dummyKey: [
+        {
+            address: 'ffff::fff:8905:c723:9e36',
+            netmask: 'ffff:ffff:ffff:ffff::',
+            family: 'IPv6',
+            mac: 'ff:ff:fc:90:2d:a9',
+            scopeid: 13,
+            internal: false,
+            cidr: 'fe80::b4d4:8905:c723:9e36/64',
+        },
+        {
+            address: '169.254.158.54',
+            netmask: '255.255.0.0',
+            family: 'IPv4',
+            mac: 'ff:ff:fc:90:2d:a9',
+            internal: false,
+            cidr: '169.254.158.54/16',
+        },
+    ],
+};
 
 describe('WsDiscovery', () => {
     const aD1: HuddlyDevice = new HuddlyDevice({ mac: 'A1' });
@@ -30,11 +76,18 @@ describe('WsDiscovery', () => {
 
     describe('constructor', () => {
         let createSocketStub;
+        let networkInterfacesStub;
+        beforeEach(() => {
+            createSocketStub = sinon.stub(dgram, 'createSocket' as any).returns(dummySocket);
+            networkInterfacesStub = sinon
+                .stub(os, 'networkInterfaces' as any)
+                .returns(dummyNetworkInterfaces);
+        });
         afterEach(() => {
             createSocketStub.restore();
+            networkInterfacesStub.restore();
         });
         it('should init class attributes', () => {
-            createSocketStub = sinon.stub(dgram, 'createSocket' as any).returns(dummySocket);
             wsdd = new WsDiscovery(dummyLogger, wsddOptions);
             expect(wsdd.opts).to.deep.equal(wsddOptions);
             expect(wsdd.logger).to.equal(dummyLogger);
@@ -43,15 +96,30 @@ describe('WsDiscovery', () => {
             expect(createSocketStub.getCall(0).args[0]).to.equal('udp4');
         });
         it('should re emit socket error', async () => {
-            const spy = sinon.spy();
-            createSocketStub = sinon.stub(dgram, 'createSocket' as any).returns(dummySocket);
             wsdd = new WsDiscovery(dummyLogger, wsddOptions);
-            wsdd.on('ERROR', spy);
+            const errorMessagePromise = new Promise(res => wsdd.on('ERROR', res));
             const errorMsg: String = 'Opps socket not initialized';
             dummySocket.emit('error', errorMsg);
             await sleep(250);
-            expect(spy.called).to.equal(true);
-            expect(spy.getCall(0).args[0]).to.equal(errorMsg);
+            const errorMessage = await errorMessagePromise;
+            expect(errorMessage).to.equal(errorMsg);
+        });
+
+        it('should set multicast interface to provided interface addr', () => {
+            sinon.spy(dummySocket, 'setMulticastInterface');
+            wsdd = new WsDiscovery(dummyLogger, {
+                multicastInterfaceAddr: '127.0.0.1',
+            });
+
+            expect(dummySocket.setMulticastInterface).to.have.been.calledWith('127.0.0.1');
+        });
+
+        it('should use base interface address by default', () => {
+            sinon.spy(dummySocket, 'setMulticastInterface');
+
+            wsdd = new WsDiscovery(dummyLogger);
+
+            expect(dummySocket.setMulticastInterface).to.have.been.calledWith('169.254.158.54');
         });
     });
 
