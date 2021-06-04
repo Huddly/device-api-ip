@@ -60,6 +60,15 @@ export default class GrpcTransport extends EventEmitter implements IGrpcTranspor
         });
     }
 
+    overrideGrpcClient(client: HuddlyServiceClient): void {
+        // Close existing client
+        if (this.grpcClient) {
+            this.grpcClient.close();
+        }
+        // Override
+        this._grpcClient = client;
+    }
+
     close(): Promise<any> {
         if (this._grpcClient) {
             this._grpcClient.close();
