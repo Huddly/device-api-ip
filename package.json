@@ -27,21 +27,20 @@
     "url": "git+https://github.com/Huddly/device-api-ip.git"
   },
   "scripts": {
-    "prepare": "npm run build",
-    "build": "bash scripts/build.sh",
+    "build": "npm run build-ts && npm run tslint",
     "build-ts": "tsc --declaration",
     "watch-ts": "tsc -w",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
     "prettier": "./node_modules/.bin/prettier --config ./.prettierrc --write src/**/*.ts tests/**/*.spec.ts",
     "prettier-check": "./node_modules/.bin/prettier --config ./.prettierrc --check src/**/*.ts tests/**/*.spec.ts",
     "test": "nyc mocha -r ts-node/register --recursive \"tests/**/*.spec.ts\" --exit",
-    "test-js": "mocha -r ts-node/register --recursive \"lib/tests/**/*.spec.js\""
+    "test-js": "mocha -r ts-node/register --recursive \"lib/tests/**/*.spec.js\"",
+    "prepare": "npm run build"
   },
   "files": [
     "lib",
     "README.md",
-    "bundle",
-    "proto"
+    "bundle"
   ],
   "pre-commit": [
     "prettier-check",
@@ -73,7 +72,8 @@
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.3.2",
-    "@huddly/sdk": "git+ssh://git@github.com/Huddly/sdk.git#l1-sdk-support",
+    "@huddly/huddlyproto": "0.0.1",
+    "@huddly/sdk": "git+ssh://git@github.com/Huddly/sdk.git#huddly-proto-npm-package",
     "@types/node": "^13.1.2",
     "dgram": "^1.0.1",
     "elementtree": "^0.1.7",
