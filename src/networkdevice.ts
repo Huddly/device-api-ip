@@ -47,7 +47,7 @@ export default class HuddlyDevice {
             serialNumber: this.serialNumber,
             modelName: this.modelName,
             manufacturer: this.manufacturer,
-            productId: this.productId
+            productId: this.productId,
         };
     }
 

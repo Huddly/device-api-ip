@@ -2,7 +2,7 @@ import chai from 'chai';
 import sinon from 'sinon';
 import Logger from '@huddly/sdk/lib/src/utilitis/logger';
 import HuddlyDevice from './../src/networkdevice';
-import { HuddlyServiceClient } from './../src/proto/huddly_grpc_pb';
+import { HuddlyServiceClient } from '@huddly/huddlyproto/lib/proto/huddly_grpc_pb';
 import * as grpc from '@grpc/grpc-js';
 import GrpcTransport from './../src/transport';
 
@@ -76,6 +76,32 @@ describe('GrpcTransport', () => {
                 });
             const p = transport.init();
             return expect(p).to.eventually.be.rejectedWith('Something went wrong');
+        });
+    });
+
+    describe('#overrideGrpcClient', () => {
+        let waitForReadyStub;
+        let closeSpy;
+        afterEach(() => {
+            waitForReadyStub.restore();
+            closeSpy.restore();
+        });
+        it('should replace the existing grpcClient instance', async () => {
+            waitForReadyStub = sinon
+                .stub(HuddlyServiceClient.prototype, 'waitForReady')
+                .callsFake((deadline, cb) => {
+                    cb(undefined);
+                });
+            await transport.init();
+            const oldClient: HuddlyServiceClient = transport.grpcClient;
+            closeSpy = sinon.spy(oldClient, 'close');
+            const newClient: HuddlyServiceClient = new HuddlyServiceClient(
+                '1.2.3.4',
+                grpc.credentials.createInsecure()
+            );
+            transport.overrideGrpcClient(newClient);
+            expect(closeSpy.calledOnce).to.equals(true);
+            expect(transport.grpcClient).to.deep.equal(newClient);
         });
     });
 

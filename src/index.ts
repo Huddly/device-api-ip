@@ -38,8 +38,14 @@ export default class HuddlyDeviceApiIP implements IHuddlyDeviceAPI {
             return undefined;
         }
 
-        if (device && (device.manufacturer != 'Huddly' || !this.SUPPORTED_DEVICES.includes(device.name))) {
-            this.logger.warn(`There is no supported ip/network transport implementation for given device!`, HuddlyDeviceApiIP.name);
+        if (
+            device &&
+            (device.manufacturer != 'Huddly' || !this.SUPPORTED_DEVICES.includes(device.name))
+        ) {
+            this.logger.warn(
+                `There is no supported ip/network transport implementation for given device!`,
+                HuddlyDeviceApiIP.name
+            );
             this.logger.warn(`Device is: ${device.toString()}`);
             return undefined;
         }
@@ -49,8 +55,13 @@ export default class HuddlyDeviceApiIP implements IHuddlyDeviceAPI {
             // TODO: some sort of handshake ?
             this.logger.info('Transport protocol is GRPC', HuddlyDeviceApiIP.name);
             return transport;
-        } catch (e) { // TODO: catch specific exception
-            this.logger.error(`GRPC Transport implementation not supported for device ${device.toString()}`, e, HuddlyDeviceApiIP.name);
+        } catch (e) {
+            // TODO: catch specific exception
+            this.logger.error(
+                `GRPC Transport implementation not supported for device ${device.toString()}`,
+                e,
+                HuddlyDeviceApiIP.name
+            );
             return undefined;
         }
     }

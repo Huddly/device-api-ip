@@ -27,21 +27,20 @@
     "url": "git+https://github.com/Huddly/device-api-ip.git"
   },
   "scripts": {
-    "prepare": "npm run build",
-    "build": "bash scripts/build.sh",
+    "build": "npm run build-ts && npm run tslint",
     "build-ts": "tsc --declaration",
     "watch-ts": "tsc -w",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
     "prettier": "./node_modules/.bin/prettier --config ./.prettierrc --write src/**/*.ts tests/**/*.spec.ts",
     "prettier-check": "./node_modules/.bin/prettier --config ./.prettierrc --check src/**/*.ts tests/**/*.spec.ts",
     "test": "nyc mocha -r ts-node/register --recursive \"tests/**/*.spec.ts\" --exit",
-    "test-js": "mocha -r ts-node/register --recursive \"lib/tests/**/*.spec.js\""
+    "test-js": "mocha -r ts-node/register --recursive \"lib/tests/**/*.spec.js\"",
+    "prepare": "npm run build"
   },
   "files": [
     "lib",
     "README.md",
-    "bundle",
-    "proto"
+    "bundle"
   ],
   "pre-commit": [
     "prettier-check",
@@ -73,11 +72,11 @@
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.3.2",
-    "@huddly/sdk": "git+ssh://git@github.com/Huddly/sdk.git#l1-sdk-support",
+    "@huddly/huddlyproto": "0.0.1",
+    "@huddly/sdk": "git+ssh://git@github.com/Huddly/sdk.git#l1-upgrade-support",
     "@types/node": "^13.1.2",
     "dgram": "^1.0.1",
     "elementtree": "^0.1.7",
-    "google-protobuf": "^3.17.1",
     "node-uuid": "^1.4.8"
   },
   "devDependencies": {
@@ -85,22 +84,19 @@
     "@types/google-protobuf": "^3.15.2",
     "@types/mocha": "^5.2.7",
     "@types/node-uuid": "0.0.28",
-    "@types/sinon": "^10.0.1",
+    "@types/sinon": "^10.0.2",
+    "await-sleep": "0.0.1",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "chai-things": "^0.2.0",
-    "grpc-tools": "^1.11.1",
-    "grpc_tools_node_protoc_ts": "^5.2.2",
     "mocha": "^8.4.0",
     "nyc": "^15.1.0",
     "pre-commit": "^1.2.2",
     "prettier": "^1.19.1",
-    "sinon": "^11.1.0",
+    "sinon": "^11.1.1",
     "sinon-chai": "^3.7.0",
     "ts-node": "^8.5.4",
-    "ts-protoc-gen": "^0.15.0",
     "tslint": "^6.1.1",
-    "typescript": "^4.0.2",
-    "await-sleep": "0.0.1"
+    "typescript": "^4.3.2"
   }
 }

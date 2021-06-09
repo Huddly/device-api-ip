@@ -1,10 +1,9 @@
 import IGrpcTransport from '@huddly/sdk/lib/src/interfaces/IGrpcTransport';
 import { EventEmitter } from 'events';
 import * as grpc from '@grpc/grpc-js';
-import { HuddlyServiceClient } from './proto/huddly_grpc_pb';
+import { HuddlyServiceClient } from '@huddly/huddlyproto/lib/proto/huddly_grpc_pb';
 import HuddlyDevice from './networkdevice';
 import Logger from '@huddly/sdk/lib/src/utilitis/logger';
-import { Empty } from 'google-protobuf/google/protobuf/empty_pb';
 
 export default class GrpcTransport extends EventEmitter implements IGrpcTransport {
     logger: any;
@@ -37,18 +36,19 @@ export default class GrpcTransport extends EventEmitter implements IGrpcTranspor
         return this._grpcClient;
     }
 
-    get empty(): Empty {
-        // Workaround until we figure out why the google proto datatypes dont match across sdk and device-api-ip
-        return new Empty();
-    }
-
     init(): Promise<void> {
         const deadline = new Date();
         deadline.setSeconds(deadline.getSeconds() + this._grpcConnectionDeadlineSeconds);
-        this._grpcClient = new HuddlyServiceClient(`${this.device.ip}:${this.GRPC_PORT}`, grpc.credentials.createInsecure());
+        this._grpcClient = new HuddlyServiceClient(
+            `${this.device.ip}:${this.GRPC_PORT}`,
+            grpc.credentials.createInsecure()
+        );
         return new Promise((resolve, reject) => {
-            this.logger.debug(`Establishing grpc connection with device with deadline set to ${this._grpcConnectionDeadlineSeconds} seconds`, GrpcTransport.name);
-            this._grpcClient.waitForReady(deadline, (error) => {
+            this.logger.debug(
+                `Establishing grpc connection with device with deadline set to ${this._grpcConnectionDeadlineSeconds} seconds`,
+                GrpcTransport.name
+            );
+            this._grpcClient.waitForReady(deadline, error => {
                 if (error) {
                     this.logger.error(`Connection failed. Reason: ${error}`, GrpcTransport.name);
                     reject(error);
@@ -58,6 +58,15 @@ export default class GrpcTransport extends EventEmitter implements IGrpcTranspor
                 }
             });
         });
+    }
+
+    overrideGrpcClient(client: HuddlyServiceClient): void {
+        // Close existing client
+        if (this.grpcClient) {
+            this.grpcClient.close();
+        }
+        // Override
+        this._grpcClient = client;
     }
 
     close(): Promise<any> {
