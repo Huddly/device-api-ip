@@ -1,0 +1,102 @@
+{
+  "name": "@huddly/device-api-ip",
+  "version": "0.0.1",
+  "description": "Huddly SDK device api which uses grpc as transport protocol for communicating with the huddly network/ip cameras",
+  "keywords": [
+    "API",
+    "SDK",
+    "Huddly",
+    "Transport",
+    "GRPC",
+    "Discovery",
+    "Protocol",
+    "Network",
+    "IP"
+  ],
+  "author": "Huddly AS <npm@huddly.com>",
+  "homepage": "http://developer.huddly.com",
+  "license": "MIT",
+  "main": "./lib/src/index.js",
+  "types": "./lib/src/index.d.ts",
+  "directories": {
+    "lib": "lib",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Huddly/device-api-ip.git"
+  },
+  "scripts": {
+    "build": "npm run build-ts && npm run tslint",
+    "build-ts": "tsc --declaration",
+    "watch-ts": "tsc -w",
+    "tslint": "tslint -c tslint.json -p tsconfig.json",
+    "prettier": "./node_modules/.bin/prettier --config ./.prettierrc --write src/**/*.ts tests/**/*.spec.ts",
+    "prettier-check": "./node_modules/.bin/prettier --config ./.prettierrc --check src/**/*.ts tests/**/*.spec.ts",
+    "test": "nyc mocha -r ts-node/register --recursive \"tests/**/*.spec.ts\" --exit",
+    "test-js": "mocha -r ts-node/register --recursive \"lib/tests/**/*.spec.js\"",
+    "prepare": "npm run build"
+  },
+  "files": [
+    "lib",
+    "README.md",
+    "bundle"
+  ],
+  "pre-commit": [
+    "prettier-check",
+    "tslint",
+    "build",
+    "test"
+  ],
+  "nyc": {
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.tsx"
+    ],
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
+  },
+  "bugs": {
+    "url": "https://github.com/Huddly/device-api-ip/issues"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.3.2",
+    "@huddly/huddlyproto": "0.0.1",
+    "@huddly/sdk": "git+ssh://git@github.com/Huddly/sdk.git#l1-upgrade-support",
+    "@types/node": "^13.1.2",
+    "dgram": "^1.0.1",
+    "elementtree": "^0.1.7",
+    "node-uuid": "^1.4.8"
+  },
+  "devDependencies": {
+    "@types/elementtree": "^0.1.0",
+    "@types/google-protobuf": "^3.15.2",
+    "@types/mocha": "^5.2.7",
+    "@types/node-uuid": "0.0.28",
+    "@types/sinon": "^10.0.2",
+    "await-sleep": "0.0.1",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "chai-things": "^0.2.0",
+    "mocha": "^8.4.0",
+    "nyc": "^15.1.0",
+    "pre-commit": "^1.2.2",
+    "prettier": "^1.19.1",
+    "sinon": "^11.1.1",
+    "sinon-chai": "^3.7.0",
+    "ts-node": "^8.5.4",
+    "tslint": "^6.1.1",
+    "typescript": "^4.3.2"
+  }
+}
