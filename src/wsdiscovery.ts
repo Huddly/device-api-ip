@@ -1,4 +1,3 @@
-import Logger from '@huddly/sdk/lib/src/utilitis/logger';
 import HuddlyDevice from './networkdevice';
 import { EventEmitter } from 'events';
 import et from 'elementtree';
@@ -9,7 +8,6 @@ import { networkInterfaces } from 'os';
 export const HUDDLY_L1_PID = 3e9; // 1001 for L1/Ace
 
 export default class WsDiscovery extends EventEmitter {
-    logger: any;
     maxDelay: number;
     opts: any;
     socket: dgram.Socket;
@@ -17,9 +15,8 @@ export default class WsDiscovery extends EventEmitter {
     readonly HUDDLY_MAC_SERIES_END: Number = 0x90e2fc9fffff;
     readonly HUDDLY_MANUFACTURER_NAME: String = 'Huddly';
 
-    constructor(logger: any = undefined, options: any = {}) {
+    constructor(options: any = {}) {
         super();
-        this.logger = logger || new Logger(true);
         this.opts = options;
         this.opts.timeout = options.timeout || 5000;
 

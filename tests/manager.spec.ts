@@ -5,7 +5,6 @@ import sleep from 'await-sleep';
 
 import DeviceDiscoveryManager from './../src/manager';
 import { EventEmitter } from 'events';
-import Logger from '@huddly/sdk/lib/src/utilitis/logger';
 import WsDiscovery from './../src/wsdiscovery';
 import HuddlyDevice from './../src/networkdevice';
 
@@ -13,7 +12,6 @@ chai.should();
 chai.use(sinonChai);
 chai.use(require('chai-things')).use(require('chai-as-promised'));
 
-const dummyLogger = sinon.createStubInstance(Logger);
 const dummyWsdd = sinon.createStubInstance(WsDiscovery);
 
 describe('DeviceDiscoveryManager', () => {
@@ -25,7 +23,7 @@ describe('DeviceDiscoveryManager', () => {
     const bD3: HuddlyDevice = new HuddlyDevice({ mac: 'B3' });
 
     beforeEach(() => {
-        devicemanager = new DeviceDiscoveryManager({ logger: dummyLogger }, dummyWsdd);
+        devicemanager = new DeviceDiscoveryManager({}, dummyWsdd);
     });
 
     afterEach(() => {
@@ -83,7 +81,7 @@ describe('DeviceDiscoveryManager', () => {
         });
 
         it('should emit attach events for all elements present in new discoverd devices', () => {
-            devicemanager = new DeviceDiscoveryManager({ logger: dummyLogger }, dummyWsdd);
+            devicemanager = new DeviceDiscoveryManager({}, dummyWsdd);
             const attachSpy = sinon.spy();
             const detachSpy = sinon.spy();
             emitter.on('ATTACH', attachSpy);
@@ -96,10 +94,7 @@ describe('DeviceDiscoveryManager', () => {
             expect(attachSpy.withArgs(aD2).calledOnce).to.equal(true);
         });
         it('should emit detach events for all elements present ', () => {
-            devicemanager = new DeviceDiscoveryManager(
-                { logger: dummyLogger, preDiscoveredDevices: [aD1] },
-                dummyWsdd
-            );
+            devicemanager = new DeviceDiscoveryManager({ preDiscoveredDevices: [aD1] }, dummyWsdd);
             const attachSpy = sinon.spy();
             const detachSpy = sinon.spy();
             emitter.on('ATTACH', attachSpy);
@@ -113,7 +108,7 @@ describe('DeviceDiscoveryManager', () => {
         });
         it('should retain only devices currently reachable through wsdd', () => {
             devicemanager = new DeviceDiscoveryManager(
-                { logger: dummyLogger, preDiscoveredDevices: [aD1, aD2] },
+                { preDiscoveredDevices: [aD1, aD2] },
                 dummyWsdd
             );
             const attachSpy = sinon.spy();
@@ -139,19 +134,13 @@ describe('DeviceDiscoveryManager', () => {
             devicemanager.destroy();
         });
         it('should call wsdd probe and handle device list to probeHandler', async () => {
-            devicemanager = new DeviceDiscoveryManager(
-                { logger: dummyLogger, pollInterval: 100 },
-                dummyWsdd
-            );
+            devicemanager = new DeviceDiscoveryManager({ pollInterval: 100 }, dummyWsdd);
             devicemanager.setupProbePoke();
             await sleep(150);
             expect(dummyWsdd.probe.callCount).gte(2);
         });
         it('should call probeHandler on each probe callback', async () => {
-            devicemanager = new DeviceDiscoveryManager(
-                { logger: dummyLogger, pollInterval: 100 },
-                dummyWsdd
-            );
+            devicemanager = new DeviceDiscoveryManager({ pollInterval: 100 }, dummyWsdd);
             dummyWsdd.probe.callsFake(cb => {
                 cb([]);
             });
@@ -165,7 +154,7 @@ describe('DeviceDiscoveryManager', () => {
     describe('#destroy', () => {
         it('should clear interval and close wsdd', () => {
             const localWsddStub = sinon.createStubInstance(WsDiscovery);
-            devicemanager = new DeviceDiscoveryManager({ logger: dummyLogger }, localWsddStub);
+            devicemanager = new DeviceDiscoveryManager({}, localWsddStub);
             devicemanager.destroy();
             expect(devicemanager.pollInterval).to.be.an('undefined');
             expect(localWsddStub.close.callCount).to.equal(1);

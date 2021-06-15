@@ -11,13 +11,6 @@ const expect = chai.expect;
 chai.should();
 chai.use(sinonChai);
 
-const dummyLogger = {
-    warn: () => {},
-    info: () => {},
-    error: () => {},
-    debug: () => {},
-};
-
 const mockedDevices: HuddlyDevice[] = [
     new HuddlyDevice({
         name: 'L1',
@@ -59,7 +52,6 @@ describe('HuddlyDeviceApiIP', () => {
     let deviceApi: HuddlyDeviceApiIP;
     beforeEach(() => {
         deviceApi = new HuddlyDeviceApiIP({
-            logger: dummyLogger,
             manager: dummyDeviceDiscoveryManager,
         });
     });
