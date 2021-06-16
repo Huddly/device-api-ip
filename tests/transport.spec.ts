@@ -1,6 +1,5 @@
 import chai from 'chai';
 import sinon from 'sinon';
-import Logger from '@huddly/sdk/lib/src/utilitis/logger';
 import HuddlyDevice from './../src/networkdevice';
 import { HuddlyServiceClient } from '@huddly/huddlyproto/lib/proto/huddly_grpc_pb';
 import * as grpc from '@grpc/grpc-js';
@@ -8,14 +7,13 @@ import GrpcTransport from './../src/transport';
 
 const expect = chai.expect;
 chai.should();
-const dummyLogger = sinon.createStubInstance(Logger);
 
 describe('GrpcTransport', () => {
     const aD1: HuddlyDevice = new HuddlyDevice({ mac: 'A1' });
     let transport: GrpcTransport;
 
     beforeEach(() => {
-        transport = new GrpcTransport(aD1, dummyLogger);
+        transport = new GrpcTransport(aD1);
     });
 
     describe('get #device', () => {

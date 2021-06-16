@@ -6,7 +6,6 @@ import HuddlyDevice from './networkdevice';
 import Logger from '@huddly/sdk/lib/src/utilitis/logger';
 
 export default class GrpcTransport extends EventEmitter implements IGrpcTransport {
-    logger: any;
     eventLoopSpeed: number;
 
     private _device: HuddlyDevice;
@@ -14,10 +13,9 @@ export default class GrpcTransport extends EventEmitter implements IGrpcTranspor
     private readonly GRPC_PORT: number = 50051;
     private _grpcClient: HuddlyServiceClient;
 
-    constructor(device: HuddlyDevice, logger: any) {
+    constructor(device: HuddlyDevice) {
         super();
         this._device = device;
-        this.logger = logger || new Logger(true);
     }
 
     get device(): HuddlyDevice {
@@ -44,16 +42,16 @@ export default class GrpcTransport extends EventEmitter implements IGrpcTranspor
             grpc.credentials.createInsecure()
         );
         return new Promise((resolve, reject) => {
-            this.logger.debug(
+            Logger.debug(
                 `Establishing grpc connection with device with deadline set to ${this._grpcConnectionDeadlineSeconds} seconds`,
                 GrpcTransport.name
             );
             this._grpcClient.waitForReady(deadline, error => {
                 if (error) {
-                    this.logger.error(`Connection failed. Reason: ${error}`, GrpcTransport.name);
+                    Logger.error(`Connection failed. Reason: ${error}`, GrpcTransport.name);
                     reject(error);
                 } else {
-                    this.logger.debug(`Connection established`, GrpcTransport.name);
+                    Logger.debug(`Connection established`, GrpcTransport.name);
                     resolve();
                 }
             });

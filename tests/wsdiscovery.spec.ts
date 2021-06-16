@@ -1,7 +1,6 @@
 import chai from 'chai';
 import sinon from 'sinon';
 import sleep from 'await-sleep';
-import Logger from '@huddly/sdk/lib/src/utilitis/logger';
 import HuddlyDevice from './../src/networkdevice';
 import WsDiscovery from './../src/wsdiscovery';
 import { HUDDLY_L1_PID } from './../src/wsdiscovery';
@@ -12,7 +11,6 @@ import os from 'os';
 
 const expect = chai.expect;
 chai.should();
-const dummyLogger = sinon.createStubInstance(Logger);
 class DummySocket extends EventEmitter {
     send() {}
     close() {}
@@ -88,15 +86,14 @@ describe('WsDiscovery', () => {
             networkInterfacesStub.restore();
         });
         it('should init class attributes', () => {
-            wsdd = new WsDiscovery(dummyLogger, wsddOptions);
+            wsdd = new WsDiscovery(wsddOptions);
             expect(wsdd.opts).to.deep.equal(wsddOptions);
-            expect(wsdd.logger).to.equal(dummyLogger);
             expect(wsdd.socket).to.equal(dummySocket);
             expect(createSocketStub.calledOnce).to.equal(true);
             expect(createSocketStub.getCall(0).args[0]).to.equal('udp4');
         });
         it('should re emit socket error', async () => {
-            wsdd = new WsDiscovery(dummyLogger, wsddOptions);
+            wsdd = new WsDiscovery(wsddOptions);
             const errorMessagePromise = new Promise(res => wsdd.on('ERROR', res));
             const errorMsg: String = 'Opps socket not initialized';
             dummySocket.emit('error', errorMsg);
@@ -107,7 +104,7 @@ describe('WsDiscovery', () => {
 
         it('should set multicast interface to provided interface addr', () => {
             sinon.spy(dummySocket, 'setMulticastInterface');
-            wsdd = new WsDiscovery(dummyLogger, {
+            wsdd = new WsDiscovery({
                 multicastInterfaceAddr: '127.0.0.1',
             });
 
@@ -117,7 +114,7 @@ describe('WsDiscovery', () => {
         it('should use base interface address by default', () => {
             sinon.spy(dummySocket, 'setMulticastInterface');
 
-            wsdd = new WsDiscovery(dummyLogger);
+            wsdd = new WsDiscovery();
 
             expect(dummySocket.setMulticastInterface).to.have.been.calledWith('169.254.158.54');
         });
@@ -131,7 +128,7 @@ describe('WsDiscovery', () => {
 
         it('should generate a uuid', () => {
             uuidstub = sinon.stub(uuid, 'v4' as any).returns('12345');
-            wsdd = new WsDiscovery(dummyLogger, wsddOptions);
+            wsdd = new WsDiscovery(wsddOptions);
             const msgId = wsdd.generateMessageId();
             expect(msgId).to.equal(`urn:uuid:12345`);
         });
@@ -139,12 +136,12 @@ describe('WsDiscovery', () => {
 
     describe('#manufacturerFromMac', () => {
         it('should be Huddly', () => {
-            wsdd = new WsDiscovery(dummyLogger, wsddOptions);
+            wsdd = new WsDiscovery(wsddOptions);
             const manufacturer = wsdd.manufacturerFromMac('90:E2:FC:90:12:EC');
             expect(manufacturer).to.equal('Huddly');
         });
         it('should not be Huddly', () => {
-            wsdd = new WsDiscovery(dummyLogger, wsddOptions);
+            wsdd = new WsDiscovery(wsddOptions);
             const manufacturer = wsdd.manufacturerFromMac('A5-9F-BE-D6-E1-9B');
             expect(manufacturer).to.not.equal('Huddly');
         });
@@ -152,12 +149,12 @@ describe('WsDiscovery', () => {
 
     describe('#networkDevicePID', () => {
         it('should return custom PID for L1', () => {
-            wsdd = new WsDiscovery(dummyLogger, wsddOptions);
+            wsdd = new WsDiscovery(wsddOptions);
             const pid: number = wsdd.networkDevicePID('L1');
             expect(pid).to.equal(HUDDLY_L1_PID);
         });
         it('should return 0 for unknown device name', () => {
-            wsdd = new WsDiscovery(dummyLogger, wsddOptions);
+            wsdd = new WsDiscovery(wsddOptions);
             const pid: number = wsdd.networkDevicePID('HelloWorld');
             expect(pid).to.equal(0x00);
         });
@@ -176,7 +173,7 @@ describe('WsDiscovery', () => {
         ];
 
         beforeEach(() => {
-            wsdd = new WsDiscovery(dummyLogger, wsddOptions);
+            wsdd = new WsDiscovery(wsddOptions);
         });
 
         it('should parse Name scope', () => {
@@ -241,7 +238,7 @@ describe('WsDiscovery', () => {
                 '<d:Probe><d:Types>dn:NetworkVideoTransmitter</d:Types></d:Probe>' +
                 '</e:Body>' +
                 '</e:Envelope>';
-            wsdd = new WsDiscovery(dummyLogger, wsddOptions);
+            wsdd = new WsDiscovery(wsddOptions);
             const buff: Buffer = wsdd.makeDiscoveryBody(msgId);
             expect(buff).to.deep.equal(Buffer.from(body));
         });
@@ -263,7 +260,7 @@ describe('WsDiscovery', () => {
             const msgId: String = '12345';
             const wsddEmitSpy = sinon.spy();
             uuidstub = sinon.stub(uuid, 'v4' as any).returns(msgId);
-            wsdd = new WsDiscovery(dummyLogger, { timeout: 10000, socket: dummySocket });
+            wsdd = new WsDiscovery({ timeout: 10000, socket: dummySocket });
             const data: any = {
                 ip: '169.254.98.175',
                 name: 'L1',
@@ -316,7 +313,7 @@ describe('WsDiscovery', () => {
         it('should return empty list for probes not related to messageId', done => {
             const msgId: String = '12345';
             uuidstub = sinon.stub(uuid, 'v4' as any).returns(msgId);
-            wsdd = new WsDiscovery(dummyLogger, { timeout: 10000, socket: dummySocket });
+            wsdd = new WsDiscovery({ timeout: 10000, socket: dummySocket });
             const huddlyProbeMatch = `
         <?xml version="1.0" encoding="UTF-8"?>
         <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope">
@@ -335,7 +332,7 @@ describe('WsDiscovery', () => {
         });
 
         it('should return empty list when there is no probe match', done => {
-            wsdd = new WsDiscovery(dummyLogger, { timeout: 100, socket: dummySocket });
+            wsdd = new WsDiscovery({ timeout: 100, socket: dummySocket });
             const huddlyProbeMatch = `
         <?xml version="1.0" encoding="UTF-8"?>
         <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope">
@@ -363,14 +360,14 @@ describe('WsDiscovery', () => {
         });
 
         it('should close socket', () => {
-            wsdd = new WsDiscovery(dummyLogger, { socket: dummySocket });
+            wsdd = new WsDiscovery({ socket: dummySocket });
             wsdd.close();
             expect(socketCloseStub.called).to.equal(true);
             expect(wsdd.socket).to.equal(undefined);
         });
         it('should emit close when socket emits close event', () => {
             const spy = sinon.spy();
-            wsdd = new WsDiscovery(dummyLogger, { socket: dummySocket });
+            wsdd = new WsDiscovery({ socket: dummySocket });
             wsdd.on('close', spy);
             wsdd.close();
             dummySocket.emit('close');

@@ -8,7 +8,6 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
     private discoveredDevices: HuddlyDevice[] = [];
     private wsdd: WsDiscovery;
     eventEmitter: EventEmitter;
-    logger: any;
     pollInterval: any;
     pollIntervalMs: number = 5000;
 
@@ -19,8 +18,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
 
     constructor(opts: any = {}, wsdd: WsDiscovery = undefined) {
         this.pollIntervalMs = opts.pollInterval || 5000;
-        this.logger = opts.logger || new Logger(true);
-        this.wsdd = wsdd || new WsDiscovery(this.logger, { timeout: 1000 });
+        this.wsdd = wsdd || new WsDiscovery({ ...opts, timeout: 1000 });
         this.discoveredDevices = opts.preDiscoveredDevices || [];
     }
 
@@ -50,7 +48,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
         const detachedDevices: HuddlyDevice[] = this.listExcept(this.discoveredDevices, deviceList);
         // Emit detach event for all devices in the above list
         for (let i = 0; i < detachedDevices.length; i++) {
-            this.logger.info(
+            Logger.info(
                 `Huddly ${detachedDevices[i].name} camera with [Serial: ${detachedDevices[i].serialNumber}, MAC: ${detachedDevices[i].mac}] not available any longer`,
                 DeviceDiscoveryManager.name
             );
@@ -62,7 +60,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
         const newDevices: HuddlyDevice[] = this.listExcept(deviceList, this.discoveredDevices);
         // Emit attach event for all devices in the above list
         for (let i = 0; i < newDevices.length; i++) {
-            this.logger.info(
+            Logger.info(
                 `Found new Huddly ${newDevices[i].name} camera with [Serial: ${newDevices[i].serialNumber}, MAC: ${newDevices[i].mac}] available at ${newDevices[i].ip}`,
                 DeviceDiscoveryManager.name
             );
@@ -103,7 +101,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
         return new Promise((resolve, reject) => {
             this.wsdd.probe((deviceList: HuddlyDevice[]) => {
                 if (serialNumber) {
-                    this.logger.debug(
+                    Logger.debug(
                         `Filtering the devices for the following serial number: ${serialNumber}`,
                         DeviceDiscoveryManager.name
                     );
@@ -115,7 +113,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
                         return;
                     }
                 } else if (deviceList.length > 0) {
-                    this.logger.debug(
+                    Logger.debug(
                         `Choosing the first discovered device from the list as the serial number is not provided`,
                         DeviceDiscoveryManager.name
                     );
@@ -124,7 +122,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
                 }
 
                 const msg: string = `Could not find device with serial ${serialNumber} amongst ${deviceList.length} devices!`;
-                this.logger.warn(msg, DeviceDiscoveryManager.name);
+                Logger.warn(msg, DeviceDiscoveryManager.name);
                 reject(msg);
             });
         });
