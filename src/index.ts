@@ -16,7 +16,7 @@ export default class HuddlyDeviceApiIP implements IHuddlyDeviceAPI {
     private readonly SUPPORTED_DEVICES: String[] = ['L1'];
 
     constructor(opts: DeviceApiOpts = {}) {
-        this.deviceDiscoveryManager = opts.manager || new DeviceDiscoveryManager();
+        this.deviceDiscoveryManager = opts.manager || new DeviceDiscoveryManager(opts);
     }
 
     async initialize() {}

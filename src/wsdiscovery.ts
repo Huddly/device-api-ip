@@ -4,6 +4,7 @@ import et from 'elementtree';
 import { v4 as uuidv4 } from 'node-uuid';
 import dgram from 'dgram';
 import { networkInterfaces } from 'os';
+import Logger from '@huddly/sdk/lib/src/utilitis/logger';
 
 export const HUDDLY_L1_PID = 3e9; // 1001 for L1/Ace
 
@@ -11,6 +12,9 @@ export default class WsDiscovery extends EventEmitter {
     maxDelay: number;
     opts: any;
     socket: dgram.Socket;
+    interfaceWatcher: any;
+    ifStateConnected: boolean = true;
+
     readonly HUDDLY_MAC_SERIES_START: Number = 0x90e2fc900000;
     readonly HUDDLY_MAC_SERIES_END: Number = 0x90e2fc9fffff;
     readonly HUDDLY_MANUFACTURER_NAME: String = 'Huddly';
@@ -20,12 +24,19 @@ export default class WsDiscovery extends EventEmitter {
         this.opts = options;
         this.opts.timeout = options.timeout || 5000;
 
-        this.socket = options.socket || dgram.createSocket('udp4');
+        this.bindSocket();
+    }
+
+    bindSocket(): void {
+        this.socket = this.opts.socket || dgram.createSocket('udp4');
         this.socket.bind(() => {
-            const baseAddress = this.getBaseAddress();
-            if (baseAddress || this.opts.multicastInterfaceAddr) {
-                const multicastInterfaceAddr = this.opts.multicastInterfaceAddr || baseAddress;
+            const map = this.getBaseInterface();
+            if ((map.ip && map.interface) || this.opts.multicastInterfaceAddr) {
+                const multicastInterfaceAddr = this.opts.multicastInterfaceAddr || map.ip;
                 this.socket.setMulticastInterface(multicastInterfaceAddr);
+            }
+            if (!this.interfaceWatcher) {
+                this.watchInterface(map.interface || 'default');
             }
         });
         this.socket.on('error', err => {
@@ -33,20 +44,41 @@ export default class WsDiscovery extends EventEmitter {
         });
     }
 
-    getBaseAddress(): string {
+    watchInterface(interfaceName: string): void {
+        if (interfaceName === 'default') {
+            // No need to watch interface detach when socket is bound to all interfaces
+            return;
+        }
+        this.interfaceWatcher = setInterval(() => {
+            const interfaceMap = networkInterfaces();
+            if (Object.keys(interfaceMap).indexOf(interfaceName) > -1 && !this.ifStateConnected) {
+                this.bindSocket();
+                this.ifStateConnected = true;
+            } else if (Object.keys(interfaceMap).indexOf(interfaceName) === -1) {
+                if (this.ifStateConnected) { // Close socket only if it was bound and the interface was deactivated
+                    Logger.debug(`Network interface [${interfaceName}] removed. Bring interface up to rediscover Huddly network cameras`, WsDiscovery.name);
+                    this.socket.close();
+                }
+                this.ifStateConnected = false;
+            }
+        }, 1000);
+    }
+
+    getBaseInterface(): any {
         const interfaceMap = networkInterfaces();
-        let baseIp;
+        const map = {ip: undefined, interface: undefined};
         for (const [k, v] of Object.entries(interfaceMap)) {
             if (v instanceof Array) {
                 v.forEach((networkInterface: any) => {
-                    if (networkInterface.family === 'IPv4' && this.manufacturerFromMac(networkInterface.mac)) {
-                        baseIp = networkInterface.address;
+                    if ((networkInterface.family === 'IPv4') && this.manufacturerFromMac(networkInterface.mac)) {
+                        map.ip = networkInterface.address;
+                        map.interface = k;
                     }
                 });
             }
         }
 
-        return baseIp;
+        return map;
     }
 
     generateMessageId(): String {
@@ -158,10 +190,12 @@ export default class WsDiscovery extends EventEmitter {
             callback(discoveredDevices);
         }, this.opts.timeout);
 
-        this.setTimeoutWithRandomDelay(
-            this.socket.send.bind(this.socket, body, 0, body.length, 3702, '239.255.255.250'),
-            this.maxDelay
-        );
+        if (this.ifStateConnected) {
+            this.setTimeoutWithRandomDelay(
+                this.socket.send.bind(this.socket, body, 0, body.length, 3702, '239.255.255.250'),
+                this.maxDelay
+            );
+        }
     }
 
     close() {
@@ -169,6 +203,11 @@ export default class WsDiscovery extends EventEmitter {
             this.socket.once('close', this.emit.bind(this, 'close'));
             this.socket.close();
         }
+        if (this.interfaceWatcher) {
+            clearInterval(this.interfaceWatcher);
+        }
+
         this.socket = undefined;
+        this.interfaceWatcher = undefined;
     }
 }

@@ -63,31 +63,27 @@ const dummyNetworkInterfaces = {
 
 describe('WsDiscovery', () => {
     const aD1: HuddlyDevice = new HuddlyDevice({ mac: 'A1' });
-    let wsdd: WsDiscovery;
+    let wsdd: WsDiscovery, createSocketStub, networkInterfacesStub;
     const wsddOptions = {
         timeout: 10,
     };
     let dummySocket: DummySocket;
     beforeEach(() => {
         dummySocket = new DummySocket();
+        createSocketStub = sinon.stub(dgram, 'createSocket' as any).returns(dummySocket);
+        networkInterfacesStub = sinon
+            .stub(os, 'networkInterfaces' as any)
+            .returns(dummyNetworkInterfaces);
     });
 
-    describe('constructor', () => {
-        let createSocketStub;
-        let networkInterfacesStub;
-        beforeEach(() => {
-            createSocketStub = sinon.stub(dgram, 'createSocket' as any).returns(dummySocket);
-            networkInterfacesStub = sinon
-                .stub(os, 'networkInterfaces' as any)
-                .returns(dummyNetworkInterfaces);
-        });
-        afterEach(() => {
-            createSocketStub.restore();
-            networkInterfacesStub.restore();
-        });
+    afterEach(() => {
+        createSocketStub.restore();
+        networkInterfacesStub.restore();
+    });
+
+    describe('#bindSocket', () => {
         it('should init class attributes', () => {
             wsdd = new WsDiscovery(wsddOptions);
-            expect(wsdd.opts).to.deep.equal(wsddOptions);
             expect(wsdd.socket).to.equal(dummySocket);
             expect(createSocketStub.calledOnce).to.equal(true);
             expect(createSocketStub.getCall(0).args[0]).to.equal('udp4');
@@ -117,6 +113,69 @@ describe('WsDiscovery', () => {
             wsdd = new WsDiscovery();
 
             expect(dummySocket.setMulticastInterface).to.have.been.calledWith('169.254.158.54');
+        });
+
+        describe('watchInterface', () => {
+            let watchIfSpy;
+            beforeEach(() => {
+                watchIfSpy = sinon.spy(WsDiscovery.prototype, 'watchInterface');
+            });
+            afterEach(() => {
+                watchIfSpy.restore();
+            });
+            it('should call watchInterface for default when no BASE device present', () => {
+                networkInterfacesStub.returns({});
+                wsdd = new WsDiscovery();
+                expect(watchIfSpy.called).to.equal(true);
+                expect(watchIfSpy.getCall(0).args[0]).to.equal('default');
+            });
+            it('should call watchInterface for BASE interface', () => {
+                wsdd = new WsDiscovery();
+                expect(watchIfSpy.called).to.equal(true);
+                expect(watchIfSpy.getCall(0).args[0]).to.equal('baseKey');
+            });
+        });
+    });
+
+    describe('#watchInterface', () => {
+        let bindSocketStub, clock;
+        beforeEach(() => {
+            bindSocketStub = sinon.stub(WsDiscovery.prototype, 'bindSocket');
+            clock = sinon.useFakeTimers();
+        });
+        afterEach(() => {
+            bindSocketStub.restore();
+            clock.restore();
+        });
+
+        describe('NO BASE', () => {
+            it('should not setup watcher for default interface', () => {
+                wsdd = new WsDiscovery();
+                wsdd.watchInterface('default');
+                expect(wsdd.interfaceWatcher).to.be.undefined;
+            });
+        });
+        describe('BASE interface', () => {
+            it('should close socket when BASE interface is disconnected', () => {
+                bindSocketStub.restore();
+                sinon.spy(dummySocket, 'close');
+                wsdd = new WsDiscovery();
+                clock.tick(1000);
+                networkInterfacesStub.returns({});
+                clock.tick(1000);
+                expect(dummySocket.close).to.have.been.called;
+                expect(wsdd.ifStateConnected).to.equal(false);
+            });
+            it('should re-bind socket when interface is re discovered/attached', () => {
+                bindSocketStub.restore();
+                wsdd = new WsDiscovery();
+                const spy = sinon.spy(wsdd, 'bindSocket');
+                wsdd.ifStateConnected = false;
+                clock.tick(1000);
+                clock.tick(1000);
+                expect(spy).to.have.been.called;
+                expect(wsdd.ifStateConnected).to.equal(true);
+            });
         });
     });
 
@@ -253,7 +312,7 @@ describe('WsDiscovery', () => {
         });
         afterEach(() => {
             setTimeoutStub.restore();
-            uuidstub.restore();
+            uuidstub?.restore();
         });
 
         it('should construct a Huddly network device based on SOAP probe match', done => {
@@ -348,6 +407,13 @@ describe('WsDiscovery', () => {
             };
             wsdd.probe(cb);
         });
+
+        it('should not send probe messages if interface where socket is bound is unavaliable', () => {
+            wsdd = new WsDiscovery({ timeout: 100, socket: dummySocket });
+            wsdd.ifStateConnected = false;
+            wsdd.probe();
+            expect(setTimeoutStub).to.have.not.been.calledOnce;
+        });
     });
 
     describe('#close', () => {
@@ -363,7 +429,7 @@ describe('WsDiscovery', () => {
             wsdd = new WsDiscovery({ socket: dummySocket });
             wsdd.close();
             expect(socketCloseStub.called).to.equal(true);
-            expect(wsdd.socket).to.equal(undefined);
+            expect(wsdd.socket).to.be.undefined;
         });
         it('should emit close when socket emits close event', () => {
             const spy = sinon.spy();
@@ -373,6 +439,14 @@ describe('WsDiscovery', () => {
             dummySocket.emit('close');
             expect(socketCloseStub.called).to.equal(true);
             expect(spy.called).to.equal(true);
+        });
+
+        it('should clear interfaceWatcher interval if it was set', () => {
+            sinon.spy(global, 'clearInterval');
+            wsdd = new WsDiscovery({ socket: dummySocket });
+            wsdd.close();
+            expect(clearInterval).to.have.been.calledOnce;
+            expect(wsdd.interfaceWatcher).to.be.undefined;
         });
     });
 });
