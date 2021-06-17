@@ -54,10 +54,12 @@ export default class WsDiscovery extends EventEmitter {
             if (Object.keys(interfaceMap).indexOf(interfaceName) > -1 && !this.ifStateConnected) {
                 this.bindSocket();
                 this.ifStateConnected = true;
+                this.emit('INTERFACE_UP');
             } else if (Object.keys(interfaceMap).indexOf(interfaceName) === -1) {
                 if (this.ifStateConnected) { // Close socket only if it was bound and the interface was deactivated
                     Logger.debug(`Network interface [${interfaceName}] removed. Bring interface up to rediscover Huddly network cameras`, WsDiscovery.name);
                     this.socket.close();
+                    this.emit('INTERFACE_DOWN');
                 }
                 this.ifStateConnected = false;
             }
@@ -141,6 +143,11 @@ export default class WsDiscovery extends EventEmitter {
     }
 
     probe(callback: any = () => { }): void {
+        if (!this.ifStateConnected) {
+            callback([]);
+            return;
+        }
+
         const self = this;
 
         const messageId = this.generateMessageId();
@@ -190,12 +197,10 @@ export default class WsDiscovery extends EventEmitter {
             callback(discoveredDevices);
         }, this.opts.timeout);
 
-        if (this.ifStateConnected) {
-            this.setTimeoutWithRandomDelay(
-                this.socket.send.bind(this.socket, body, 0, body.length, 3702, '239.255.255.250'),
-                this.maxDelay
-            );
-        }
+        this.setTimeoutWithRandomDelay(
+            this.socket.send.bind(this.socket, body, 0, body.length, 3702, '239.255.255.250'),
+            this.maxDelay
+        );
     }
 
     close() {

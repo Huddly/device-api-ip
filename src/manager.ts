@@ -10,6 +10,8 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
     eventEmitter: EventEmitter;
     pollInterval: any;
     pollIntervalMs: number = 5000;
+    wsddIFUpListener: any;
+    wsddIFDownListener: any;
 
     // When you want the list directly without going through probe discovery.
     get pairedDevices(): HuddlyDevice[] {
@@ -25,6 +27,24 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
     registerForHotplugEvents(eventEmitter: EventEmitter) {
         this.eventEmitter = eventEmitter;
         this.setupProbePoke();
+
+        this.wsddIFUpListener = this.wsdd.on('INTERFACE_UP', () => {
+            const temporaryPoll = setInterval(() => {
+                this.wsdd.probe((deviceList: HuddlyDevice[]) => {
+                    if (deviceList.length > 0) {
+                        this.probeHandler(deviceList);
+                        clearInterval(temporaryPoll);
+                    }
+                });
+            }, 500);
+            setTimeout(() => {
+                clearInterval(temporaryPoll);
+                this.setupProbePoke();
+            }, 30000);
+        });
+        this.wsddIFDownListener = this.wsdd.on('INTERFACE_DOWN', () => {
+            clearInterval(this.pollInterval);
+        });
     }
 
     listExcept(listA: HuddlyDevice[], listB: HuddlyDevice[]): HuddlyDevice[] {
@@ -85,6 +105,15 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
             clearInterval(this.pollInterval);
             this.pollInterval = undefined;
         }
+
+        if (this.wsddIFDownListener) {
+            this.wsdd.removeListener('INTERFACE_DOWN', this.wsddIFDownListener);
+        }
+
+        if (this.wsddIFUpListener) {
+            this.wsdd.removeListener('INTERFACE_UP', this.wsddIFUpListener);
+        }
+
         this.wsdd.close();
     }
 
