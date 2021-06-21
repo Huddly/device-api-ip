@@ -1,7 +1,7 @@
 import IGrpcTransport from '@huddly/sdk/lib/src/interfaces/IGrpcTransport';
 import { EventEmitter } from 'events';
 import * as grpc from '@grpc/grpc-js';
-import { HuddlyServiceClient } from '@huddly/huddlyproto/lib/proto/huddly_grpc_pb';
+import { HuddlyServiceClient } from '@huddly/camera-proto/lib/api/huddly_grpc_pb';
 import HuddlyDevice from './networkdevice';
 import Logger from '@huddly/sdk/lib/src/utilitis/logger';
 
