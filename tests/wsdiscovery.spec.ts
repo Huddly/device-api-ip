@@ -8,6 +8,7 @@ import dgram from 'dgram';
 import uuid from 'node-uuid';
 import { EventEmitter } from 'events';
 import os from 'os';
+import { parseOnvifScopes, manufacturerFromMac, makeDiscoveryBody } from './../src/utils';
 
 const expect = chai.expect;
 chai.should();
@@ -196,12 +197,12 @@ describe('WsDiscovery', () => {
     describe('#manufacturerFromMac', () => {
         it('should be Huddly', () => {
             wsdd = new WsDiscovery(wsddOptions);
-            const manufacturer = wsdd.manufacturerFromMac('90:E2:FC:90:12:EC');
+            const manufacturer = manufacturerFromMac('90:E2:FC:90:12:EC');
             expect(manufacturer).to.equal('Huddly');
         });
         it('should not be Huddly', () => {
             wsdd = new WsDiscovery(wsddOptions);
-            const manufacturer = wsdd.manufacturerFromMac('A5-9F-BE-D6-E1-9B');
+            const manufacturer = manufacturerFromMac('A5-9F-BE-D6-E1-9B');
             expect(manufacturer).to.not.equal('Huddly');
         });
     });
@@ -236,43 +237,43 @@ describe('WsDiscovery', () => {
         });
 
         it('should parse Name scope', () => {
-            const parsed = wsdd.parseOnvifScopes(onvifScopes, 'name');
+            const parsed = parseOnvifScopes(onvifScopes, 'name');
             expect(parsed.length).to.equal(1);
             expect(parsed[0]).to.equal('L1');
         });
         it('should parse Profile scope', () => {
-            const parsed = wsdd.parseOnvifScopes(onvifScopes, 'Profile');
+            const parsed = parseOnvifScopes(onvifScopes, 'Profile');
             expect(parsed.length).to.equal(1);
             expect(parsed[0]).to.equal('Streaming');
         });
         it('should parse Types scope', () => {
-            const parsed = wsdd.parseOnvifScopes(onvifScopes, 'type');
+            const parsed = parseOnvifScopes(onvifScopes, 'type');
             expect(parsed.length).to.equal(2);
             expect(parsed[0]).to.equal('video_encoder');
             expect(parsed[1]).to.equal('ptz');
         });
         it('should parse Hardware scope', () => {
-            const parsed = wsdd.parseOnvifScopes(onvifScopes, 'hardware');
+            const parsed = parseOnvifScopes(onvifScopes, 'hardware');
             expect(parsed.length).to.equal(1);
             expect(parsed[0]).to.equal('810-00011-MBLK');
         });
         it('should parse Location scope', () => {
-            const parsed = wsdd.parseOnvifScopes(onvifScopes, 'location');
+            const parsed = parseOnvifScopes(onvifScopes, 'location');
             expect(parsed.length).to.equal(1);
             expect(parsed[0]).to.equal('ANY');
         });
         it('should parse Serial scope', () => {
-            const parsed = wsdd.parseOnvifScopes(onvifScopes, 'serial');
+            const parsed = parseOnvifScopes(onvifScopes, 'serial');
             expect(parsed.length).to.equal(1);
             expect(parsed[0]).to.equal('12101A0029');
         });
         it('should parse Mac scope', () => {
-            const parsed = wsdd.parseOnvifScopes(onvifScopes, 'mac');
+            const parsed = parseOnvifScopes(onvifScopes, 'mac');
             expect(parsed.length).to.equal(1);
             expect(parsed[0]).to.equal('90:E2:FC:90:12:EC');
         });
         it('should return default value when scope not found', () => {
-            const parsed = wsdd.parseOnvifScopes(onvifScopes, 'unknown', ['helloworld']);
+            const parsed = parseOnvifScopes(onvifScopes, 'unknown', ['helloworld']);
             expect(parsed.length).to.equal(1);
             expect(parsed[0]).to.equal('helloworld');
         });
@@ -298,7 +299,7 @@ describe('WsDiscovery', () => {
                 '</e:Body>' +
                 '</e:Envelope>';
             wsdd = new WsDiscovery(wsddOptions);
-            const buff: Buffer = wsdd.makeDiscoveryBody(msgId);
+            const buff: Buffer = makeDiscoveryBody(msgId);
             expect(buff).to.deep.equal(Buffer.from(body));
         });
     });

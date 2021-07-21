@@ -5,6 +5,12 @@ import { v4 as uuidv4 } from 'node-uuid';
 import dgram from 'dgram';
 import { networkInterfaces } from 'os';
 import Logger from '@huddly/sdk/lib/src/utilitis/logger';
+import {
+    getInterfaceWithHuddlyDevice,
+    makeDiscoveryBody,
+    manufacturerFromMac,
+    parseOnvifScopes,
+} from './utils';
 
 export const HUDDLY_L1_PID = 3e9; // 1001 for L1/Ace
 
@@ -55,8 +61,12 @@ export default class WsDiscovery extends EventEmitter {
                 this.bindSocket();
                 this.ifStateConnected = true;
             } else if (Object.keys(interfaceMap).indexOf(interfaceName) === -1) {
-                if (this.ifStateConnected) { // Close socket only if it was bound and the interface was deactivated
-                    Logger.debug(`Network interface [${interfaceName}] removed. Bring interface up to rediscover Huddly network cameras`, WsDiscovery.name);
+                if (this.ifStateConnected) {
+                    // Close socket only if it was bound and the interface was deactivated
+                    Logger.debug(
+                        `Network interface [${interfaceName}] removed. Bring interface up to rediscover Huddly network cameras`,
+                        WsDiscovery.name
+                    );
                     this.socket.close();
                 }
                 this.ifStateConnected = false;
@@ -66,11 +76,14 @@ export default class WsDiscovery extends EventEmitter {
 
     getBaseInterface(): any {
         const interfaceMap = networkInterfaces();
-        const map = {ip: undefined, interface: undefined};
+        const map = { ip: undefined, interface: undefined };
         for (const [k, v] of Object.entries(interfaceMap)) {
             if (v instanceof Array) {
                 v.forEach((networkInterface: any) => {
-                    if ((networkInterface.family === 'IPv4') && this.manufacturerFromMac(networkInterface.mac)) {
+                    if (
+                        networkInterface.family === 'IPv4' &&
+                        manufacturerFromMac(networkInterface.mac)
+                    ) {
                         map.ip = networkInterface.address;
                         map.interface = k;
                     }
@@ -89,14 +102,6 @@ export default class WsDiscovery extends EventEmitter {
         setTimeout(fn, Math.floor(Math.random() * max));
     }
 
-    manufacturerFromMac(mac: String): String {
-        const numericMac = parseInt(mac.split(':').join(''), 16);
-        return numericMac >= this.HUDDLY_MAC_SERIES_START &&
-            numericMac <= this.HUDDLY_MAC_SERIES_END
-            ? this.HUDDLY_MANUFACTURER_NAME
-            : '';
-    }
-
     networkDevicePID(name: String): number {
         switch (name) {
             case 'L1':
@@ -106,45 +111,11 @@ export default class WsDiscovery extends EventEmitter {
         }
     }
 
-    parseOnvifScopes(scopes: String[], name: String, defaultValue: String[] = ['N/A']): String[] {
-        const regex = `(?<=${name}/).*?(?=$|\\s)`;
-
-        const foundValue = [];
-        for (let i = 0; i < scopes.length; i++) {
-            const element = scopes[i];
-            const found = element.match(regex);
-            if (found != undefined) {
-                foundValue.push(found[0]);
-            }
-        }
-        return foundValue.length > 0 ? foundValue : defaultValue;
-    }
-
-    makeDiscoveryBody(msgId: String): Buffer {
-        const body =
-            '<?xml version="1.0" encoding="UTF-8"?>' +
-            '<e:Envelope xmlns:e="http://www.w3.org/2003/05/soap-envelope"' +
-            'xmlns:w="http://schemas.xmlsoap.org/ws/2004/08/addressing"' +
-            'xmlns:d="http://schemas.xmlsoap.org/ws/2005/04/discovery"' +
-            'xmlns:tds="https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl"' +
-            'xmlns:dn="http://www.onvif.org/ver10/network/wsdl">' +
-            '<e:Header>' +
-            `<w:MessageID>${msgId}</w:MessageID>` +
-            '<w:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</w:To>' +
-            '<w:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</w:Action>' +
-            '</e:Header>' +
-            '<e:Body>' +
-            '<d:Probe><d:Types>dn:NetworkVideoTransmitter</d:Types></d:Probe>' +
-            '</e:Body>' +
-            '</e:Envelope>';
-        return Buffer.from(body);
-    }
-
-    probe(callback: any = () => { }): void {
+    probe(callback: any = () => {}): void {
         const self = this;
 
         const messageId = this.generateMessageId();
-        const body = this.makeDiscoveryBody(messageId);
+        const body = makeDiscoveryBody(messageId);
         const discoveredDevices: HuddlyDevice[] = [];
         const onProbeResponseHandler = (message: any) => {
             const tree = et.parse(message.toString());
@@ -161,18 +132,18 @@ export default class WsDiscovery extends EventEmitter {
                         .toString()
                         .split(' ');
 
-                    const macAddr = this.parseOnvifScopes(scopes, 'mac')[0];
-                    const name = this.parseOnvifScopes(scopes, 'name', ['Unknown_Device'])[0];
+                    const macAddr = parseOnvifScopes(scopes, 'mac')[0];
+                    const name = parseOnvifScopes(scopes, 'name', ['Unknown_Device'])[0];
                     const deviceData = {
                         name: name,
                         mac: macAddr,
                         ip: ipv4Addr[0],
-                        serialNumber: this.parseOnvifScopes(scopes, 'serial')[0],
-                        types: this.parseOnvifScopes(scopes, 'type'),
+                        serialNumber: parseOnvifScopes(scopes, 'serial')[0],
+                        types: parseOnvifScopes(scopes, 'type'),
                         scopes: scopes,
                         xaddrs: match.findtext('wsdd:XAddrs'),
-                        modelName: this.parseOnvifScopes(scopes, 'hardware')[0],
-                        manufacturer: this.manufacturerFromMac(macAddr),
+                        modelName: parseOnvifScopes(scopes, 'hardware')[0],
+                        manufacturer: manufacturerFromMac(macAddr),
                         metadataVersion: match.findtext('wsdd:MetadataVersion'),
                         messageId: tree.findtext('*/wsa:MessageID'),
                         pid: this.networkDevicePID(name),
