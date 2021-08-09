@@ -31,9 +31,9 @@ export default class WsDiscovery extends EventEmitter {
         this.socket = this.opts.socket || dgram.createSocket('udp4');
         this.socket.bind(() => {
             const map = this.getBaseInterface();
-            if ((map.ip && map.interface) || this.opts.multicastInterfaceAddr) {
-                const multicastInterfaceAddr = this.opts.multicastInterfaceAddr || map.ip;
-                this.socket.setMulticastInterface(multicastInterfaceAddr);
+            if ((map.ip && map.interface) || this.opts.targetInterfaceAddr) {
+                const targetInterfaceAddr = this.opts.targetInterfaceAddr || map.ip;
+                this.socket.setMulticastInterface(targetInterfaceAddr);
             }
             if (!this.interfaceWatcher) {
                 this.watchInterface(map.interface || 'default');

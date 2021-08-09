@@ -101,7 +101,7 @@ describe('WsDiscovery', () => {
         it('should set multicast interface to provided interface addr', () => {
             sinon.spy(dummySocket, 'setMulticastInterface');
             wsdd = new WsDiscovery({
-                multicastInterfaceAddr: '127.0.0.1',
+                targetInterfaceAddr: '127.0.0.1',
             });
 
             expect(dummySocket.setMulticastInterface).to.have.been.calledWith('127.0.0.1');
