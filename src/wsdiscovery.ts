@@ -55,8 +55,12 @@ export default class WsDiscovery extends EventEmitter {
                 this.bindSocket();
                 this.ifStateConnected = true;
             } else if (Object.keys(interfaceMap).indexOf(interfaceName) === -1) {
-                if (this.ifStateConnected) { // Close socket only if it was bound and the interface was deactivated
-                    Logger.debug(`Network interface [${interfaceName}] removed. Bring interface up to rediscover Huddly network cameras`, WsDiscovery.name);
+                if (this.ifStateConnected) {
+                    // Close socket only if it was bound and the interface was deactivated
+                    Logger.debug(
+                        `Network interface [${interfaceName}] removed. Bring interface up to rediscover Huddly network cameras`,
+                        WsDiscovery.name
+                    );
                     this.socket.close();
                 }
                 this.ifStateConnected = false;
@@ -66,11 +70,19 @@ export default class WsDiscovery extends EventEmitter {
 
     getBaseInterface(): any {
         const interfaceMap = networkInterfaces();
-        const map = {ip: undefined, interface: undefined};
+        const map = { ip: undefined, interface: undefined };
         for (const [k, v] of Object.entries(interfaceMap)) {
             if (v instanceof Array) {
                 v.forEach((networkInterface: any) => {
-                    if ((networkInterface.family === 'IPv4') && this.manufacturerFromMac(networkInterface.mac)) {
+                    if (
+                        (networkInterface.family === 'IPv4' &&
+                            this.manufacturerFromMac(networkInterface.mac)) ||
+                        (this.opts.targetInterfaceName && this.opts.targetInterfaceName == k)
+                    ) {
+                        Logger.debug(
+                            `Discovery probe messages bound to interface ${k}`,
+                            WsDiscovery.name
+                        );
                         map.ip = networkInterface.address;
                         map.interface = k;
                     }
@@ -140,7 +152,7 @@ export default class WsDiscovery extends EventEmitter {
         return Buffer.from(body);
     }
 
-    probe(callback: any = () => { }): void {
+    probe(callback: any = () => {}): void {
         const self = this;
 
         const messageId = this.generateMessageId();
