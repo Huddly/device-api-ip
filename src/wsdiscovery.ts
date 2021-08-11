@@ -108,6 +108,15 @@ export default class WsDiscovery extends EventEmitter {
         return map;
     }
 
+    linkLocalAddrAllowed(ipAddress: string): boolean {
+        if (this.opts.ignoreLinkLocalDevices || process.env.HUDDLY_WSDD_IGNORE_LINK_LOCAL_DEVICES) {
+            return !ipAddress.startsWith('169.254');
+        }
+
+        // Default: allow link local
+        return true;
+    }
+
     generateMessageId(): String {
         return 'urn:uuid:' + uuidv4();
     }
@@ -205,8 +214,16 @@ export default class WsDiscovery extends EventEmitter {
                         pid: this.networkDevicePID(name),
                     };
                     const device = new HuddlyDevice(deviceData);
-                    discoveredDevices.push(device);
-                    this.emit('device', device);
+
+                    if (this.linkLocalAddrAllowed(device.ip.toString())) {
+                        discoveredDevices.push(device);
+                        this.emit('device', device);
+                    } else {
+                        Logger.debug(
+                            `Link local huddly ip camera detected. Instructions are set to ignore link local devices!`,
+                            WsDiscovery.name
+                        );
+                    }
                 });
             }
             callback(discoveredDevices);

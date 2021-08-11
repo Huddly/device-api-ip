@@ -48,7 +48,10 @@ export default class GrpcTransport extends EventEmitter implements IGrpcTranspor
             );
             this._grpcClient.waitForReady(deadline, error => {
                 if (error) {
-                    Logger.error(`Connection failed. Reason: ${error}`, GrpcTransport.name);
+                    Logger.error(
+                        `Unable to establish grpc connection on address ${this.device.ip}:${this.GRPC_PORT}! ${error}`,
+                        GrpcTransport.name
+                    );
                     reject(error);
                 } else {
                     Logger.debug(`Connection established`, GrpcTransport.name);

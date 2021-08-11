@@ -179,6 +179,75 @@ describe('WsDiscovery', () => {
         });
     });
 
+    describe('#findL1HostInterface', () => {
+        let manufacturerStub;
+        beforeEach(() => {
+            manufacturerStub = sinon.stub(WsDiscovery.prototype, 'manufacturerFromMac');
+        });
+        afterEach(() => {
+            manufacturerStub?.restore();
+        });
+        it('should return a base interface', () => {
+            const dummyNetworkInterfaces = {
+                baseKey: [
+                    {
+                        address: '169.254.158.54',
+                        family: 'IPv4',
+                    },
+                ],
+            };
+            networkInterfacesStub.returns(dummyNetworkInterfaces);
+            manufacturerStub.returns(true);
+            wsdd = new WsDiscovery(wsddOptions);
+            const map = wsdd.findL1HostInterface();
+            expect(map).to.deep.equal({ ip: '169.254.158.54', interface: 'baseKey' });
+        });
+        it('should ignore ipv6 interfaces', () => {
+            const dummyNetworkInterfaces = { baseKey: [{ family: 'IPv6' }] };
+            networkInterfacesStub.returns(dummyNetworkInterfaces);
+            wsdd = new WsDiscovery(wsddOptions);
+            const map = wsdd.findL1HostInterface();
+            expect(map).to.deep.equal({ ip: undefined, interface: undefined });
+        });
+        it('should ignore non-huddly vendors', () => {
+            const dummyNetworkInterfaces = { baseKey: [{ family: 'IPv4' }] };
+            networkInterfacesStub.returns(dummyNetworkInterfaces);
+            manufacturerStub.returns(false);
+            wsdd = new WsDiscovery(wsddOptions);
+            const map = wsdd.findL1HostInterface();
+            expect(map).to.deep.equal({ ip: undefined, interface: undefined });
+        });
+        it('should return the targeted interface', () => {
+            const dummyNetworkInterfaces = {
+                base1Key: [{ family: 'IPv4', address: '169.254.158.54' }],
+                base2Key: [{ family: 'IPv4', address: '169.254.158.55' }],
+            };
+            networkInterfacesStub.returns(dummyNetworkInterfaces);
+            manufacturerStub.returns(true);
+            wsdd = new WsDiscovery({ ...wsddOptions, targetInterfaceName: 'base2Key' });
+            const map = wsdd.findL1HostInterface();
+            expect(map).to.deep.equal({ ip: '169.254.158.55', interface: 'base2Key' });
+        });
+    });
+
+    describe('#linkLocalAddrAllowed', () => {
+        it('should allow link local addresses by default', () => {
+            wsdd = new WsDiscovery(wsddOptions);
+            const allowed = wsdd.linkLocalAddrAllowed('169.254.10.10');
+            expect(allowed).to.equal(true);
+        });
+        it('should be ignored when option says so', () => {
+            wsdd = new WsDiscovery({ ...wsddOptions, ignoreLinkLocalDevices: true });
+            const allowed = wsdd.linkLocalAddrAllowed('169.254.10.10');
+            expect(allowed).to.equal(false);
+        });
+        it('should be allowed when option says so and ip is non-link local', () => {
+            wsdd = new WsDiscovery({ ...wsddOptions, ignoreLinkLocalDevices: true });
+            const allowed = wsdd.linkLocalAddrAllowed('10.1.0.10');
+            expect(allowed).to.equal(true);
+        });
+    });
+
     describe('#generateMessageId', () => {
         let uuidstub;
         afterEach(() => {
