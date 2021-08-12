@@ -24,18 +24,30 @@ export default class WsDiscovery extends EventEmitter {
         this.opts = options;
         this.opts.timeout = options.timeout || 5000;
 
+        Logger.debug(
+            `WsDiscovery initilized with the following options: ${JSON.stringify(this.opts)}`,
+            WsDiscovery.name
+        );
         this.bindSocket();
     }
 
     bindSocket(): void {
         this.socket = this.opts.socket || dgram.createSocket('udp4');
         this.socket.bind(() => {
-            const map = this.getBaseInterface();
-            if ((map.ip && map.interface) || this.opts.multicastInterfaceAddr) {
-                const multicastInterfaceAddr = this.opts.multicastInterfaceAddr || map.ip;
-                this.socket.setMulticastInterface(multicastInterfaceAddr);
+            const map = this.findL1HostInterface();
+            if ((map.ip && map.interface) || this.opts.targetInterfaceAddr) {
+                const targetInterfaceAddr = this.opts.targetInterfaceAddr || map.ip;
+                this.socket.setMulticastInterface(targetInterfaceAddr);
+                Logger.debug(
+                    `Set default outgoing multicast interface of the socket to interface with address ${targetInterfaceAddr}`,
+                    WsDiscovery.name
+                );
             }
             if (!this.interfaceWatcher) {
+                Logger.debug(
+                    `Initiating interface watch for ${map.interface || 'default'}`,
+                    WsDiscovery.name
+                );
                 this.watchInterface(map.interface || 'default');
             }
         });
@@ -55,8 +67,12 @@ export default class WsDiscovery extends EventEmitter {
                 this.bindSocket();
                 this.ifStateConnected = true;
             } else if (Object.keys(interfaceMap).indexOf(interfaceName) === -1) {
-                if (this.ifStateConnected) { // Close socket only if it was bound and the interface was deactivated
-                    Logger.debug(`Network interface [${interfaceName}] removed. Bring interface up to rediscover Huddly network cameras`, WsDiscovery.name);
+                if (this.ifStateConnected) {
+                    // Close socket only if it was bound and the interface was deactivated
+                    Logger.debug(
+                        `Network interface [${interfaceName}] removed. Bring interface up to rediscover Huddly network cameras`,
+                        WsDiscovery.name
+                    );
                     this.socket.close();
                 }
                 this.ifStateConnected = false;
@@ -64,21 +80,41 @@ export default class WsDiscovery extends EventEmitter {
         }, 1000);
     }
 
-    getBaseInterface(): any {
+    findL1HostInterface(): any {
         const interfaceMap = networkInterfaces();
-        const map = {ip: undefined, interface: undefined};
+        const map = { ip: undefined, interface: undefined };
         for (const [k, v] of Object.entries(interfaceMap)) {
             if (v instanceof Array) {
                 v.forEach((networkInterface: any) => {
-                    if ((networkInterface.family === 'IPv4') && this.manufacturerFromMac(networkInterface.mac)) {
-                        map.ip = networkInterface.address;
-                        map.interface = k;
+                    // Make sure we operate on Ipv4 addresses only
+                    if (networkInterface.family === 'IPv4') {
+                        // Check if the integrator has specified the target interface or one of the interfaces is huddly compatible (BASE)
+                        if (
+                            (this.opts.targetInterfaceName && this.opts.targetInterfaceName == k) ||
+                            this.manufacturerFromMac(networkInterface.mac)
+                        ) {
+                            Logger.debug(
+                                `Discovery probe messages bound to interface ${k} on addr ${networkInterface.address}`,
+                                WsDiscovery.name
+                            );
+                            map.ip = networkInterface.address;
+                            map.interface = k;
+                        }
                     }
                 });
             }
         }
 
         return map;
+    }
+
+    linkLocalAddrAllowed(ipAddress: string): boolean {
+        if (this.opts.ignoreLinkLocalDevices || process.env.HUDDLY_WSDD_IGNORE_LINK_LOCAL_DEVICES) {
+            return !ipAddress.startsWith('169.254');
+        }
+
+        // Default: allow link local
+        return true;
     }
 
     generateMessageId(): String {
@@ -140,7 +176,7 @@ export default class WsDiscovery extends EventEmitter {
         return Buffer.from(body);
     }
 
-    probe(callback: any = () => { }): void {
+    probe(callback: any = () => {}): void {
         const self = this;
 
         const messageId = this.generateMessageId();
@@ -178,8 +214,16 @@ export default class WsDiscovery extends EventEmitter {
                         pid: this.networkDevicePID(name),
                     };
                     const device = new HuddlyDevice(deviceData);
-                    discoveredDevices.push(device);
-                    this.emit('device', device);
+
+                    if (this.linkLocalAddrAllowed(device.ip.toString())) {
+                        discoveredDevices.push(device);
+                        this.emit('device', device);
+                    } else {
+                        Logger.debug(
+                            `Link local huddly ip camera detected. Instructions are set to ignore link local devices!`,
+                            WsDiscovery.name
+                        );
+                    }
                 });
             }
             callback(discoveredDevices);
