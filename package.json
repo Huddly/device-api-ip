@@ -43,6 +43,10 @@
     "README.md",
     "bundle"
   ],
+  "publishConfig": {
+    "registry": "http://registry.npmjs.org/",
+    "access": "public"
+  },
   "pre-commit": [
     "prettier-check",
     "tslint",
