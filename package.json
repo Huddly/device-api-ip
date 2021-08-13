@@ -1,6 +1,6 @@
 {
   "name": "@huddly/device-api-ip",
-  "version": "0.0.1",
+  "version": "0.1.2",
   "description": "Huddly SDK device api which uses grpc as transport protocol for communicating with the huddly network/ip cameras",
   "keywords": [
     "API",
@@ -31,6 +31,7 @@
     "build-ts": "tsc --declaration",
     "watch-ts": "tsc -w",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
+    "publish-package": "npm run build  && npm publish",
     "prettier": "./node_modules/.bin/prettier --config ./.prettierrc --write src/**/*.ts tests/**/*.spec.ts",
     "prettier-check": "./node_modules/.bin/prettier --config ./.prettierrc --check src/**/*.ts tests/**/*.spec.ts",
     "test": "nyc mocha -r ts-node/register --recursive \"tests/**/*.spec.ts\" --exit",
@@ -42,6 +43,10 @@
     "README.md",
     "bundle"
   ],
+  "publishConfig": {
+    "registry": "http://registry.npmjs.org/",
+    "access": "public"
+  },
   "pre-commit": [
     "prettier-check",
     "tslint",
@@ -79,7 +84,7 @@
   },
   "peerDependencies": {
     "@grpc/grpc-js": "^1.3.2",
-    "@huddly/camera-proto": "^1.0"
+    "@huddly/camera-proto": "^1.0.5"
   },
   "devDependencies": {
     "@types/elementtree": "^0.1.0",
