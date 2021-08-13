@@ -31,6 +31,7 @@
     "build-ts": "tsc --declaration",
     "watch-ts": "tsc -w",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
+    "publish-package": "npm run build  && npm publish",
     "prettier": "./node_modules/.bin/prettier --config ./.prettierrc --write src/**/*.ts tests/**/*.spec.ts",
     "prettier-check": "./node_modules/.bin/prettier --config ./.prettierrc --check src/**/*.ts tests/**/*.spec.ts",
     "test": "nyc mocha -r ts-node/register --recursive \"tests/**/*.spec.ts\" --exit",
