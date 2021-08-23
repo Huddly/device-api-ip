@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import sleep from 'await-sleep';
 import HuddlyDevice from './../src/networkdevice';
 import WsDiscovery from './../src/wsdiscovery';
-import { HUDDLY_L1_PID } from './../src/wsdiscovery';
+import { HUDDLY_L1_PID } from '@huddly/sdk/lib/src/components/device/factory';
 import dgram from 'dgram';
 import uuid from 'node-uuid';
 import { EventEmitter } from 'events';

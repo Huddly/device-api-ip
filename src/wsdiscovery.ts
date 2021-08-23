@@ -5,8 +5,7 @@ import { v4 as uuidv4 } from 'node-uuid';
 import dgram from 'dgram';
 import { networkInterfaces } from 'os';
 import Logger from '@huddly/sdk/lib/src/utilitis/logger';
-
-export const HUDDLY_L1_PID = 3e9; // 1001 for L1/Ace
+import { HUDDLY_L1_PID } from '@huddly/sdk/lib/src/components/device/factory';
 
 export default class WsDiscovery extends EventEmitter {
     maxDelay: number;

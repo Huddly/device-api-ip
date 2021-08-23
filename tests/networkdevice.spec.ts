@@ -1,6 +1,6 @@
 import chai from 'chai';
 import HuddlyDevice from './../src/networkdevice';
-import { HUDDLY_L1_PID } from './../src/wsdiscovery';
+import { HUDDLY_L1_PID } from '@huddly/sdk/lib/src/components/device/factory';
 
 const expect = chai.expect;
 chai.should();
