@@ -53,7 +53,7 @@ export default class DeviceDiscoveryManager implements IDeviceDiscovery {
                 DeviceDiscoveryManager.name
             );
             if (this.eventEmitter) {
-                this.eventEmitter.emit('DETACH', detachedDevices[i]);
+                this.eventEmitter.emit('DETACH', detachedDevices[i].serialNumber);
             }
         }
         // Find which devices have been newly discovered

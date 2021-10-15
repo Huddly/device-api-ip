@@ -104,7 +104,7 @@ describe('DeviceDiscoveryManager', () => {
             expect(attachSpy.callCount).to.equal(1);
             expect(detachSpy.callCount).to.equal(1);
             expect(attachSpy.withArgs(aD2).calledOnce).to.equal(true);
-            expect(detachSpy.withArgs(aD1).calledOnce).to.equal(true);
+            expect(detachSpy.withArgs(aD1.serialNumber).calledOnce).to.equal(true);
         });
         it('should retain only devices currently reachable through wsdd', () => {
             devicemanager = new DeviceDiscoveryManager(
