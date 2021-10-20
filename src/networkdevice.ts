@@ -63,7 +63,7 @@ export default class HuddlyDevice {
     equals(device: HuddlyDevice): boolean {
         if (device != undefined) {
             if (device.mac != undefined && this.mac != undefined) {
-                return device.mac == this.mac;
+                return device.mac.toUpperCase() == this.mac.toUpperCase();
             }
             if (device.serialNumber != undefined && this.serialNumber != undefined) {
                 return device.serialNumber == this.serialNumber;
