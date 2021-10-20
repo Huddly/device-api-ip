@@ -122,6 +122,11 @@ describe('HuddlyDeviceApiIP', () => {
                 const d2 = new HuddlyDevice({ mac: 'A1:B2:C3:D4:E5:F6' });
                 expect(d1.equals(d2)).to.equal(true);
             });
+            it('when mac addreses have different case sensitivity', () => {
+                const d1 = new HuddlyDevice({ mac: 'A1:B2:C3:D4:E5:F6' });
+                const d2 = new HuddlyDevice({ mac: 'a1:b2:c3:d4:e5:f6' });
+                expect(d1.equals(d2)).to.equal(true);
+            });
             it('when mac is missing but serial is same', () => {
                 const d1 = new HuddlyDevice({ serialNumber: '156434325642' });
                 const d2 = new HuddlyDevice({ serialNumber: '156434325642' });
