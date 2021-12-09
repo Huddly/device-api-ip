@@ -16,14 +16,12 @@ chai.should();
 class DummySocket extends EventEmitter {
     send() {}
     close() {}
-    bind(cb) {
-        cb();
-    }
+    bind() {}
     setMulticastInterface() {}
 }
 
 const dummyNetworkInterfaces = {
-    baseKey: [
+    baseInterface: [
         {
             address: 'fe80::b4d4:8905:c723:9e36',
             netmask: 'ffff:ffff:ffff:ffff::',
@@ -42,7 +40,7 @@ const dummyNetworkInterfaces = {
             cidr: '169.254.158.54/16',
         },
     ],
-    dummyKey: [
+    linkLocalInterface: [
         {
             address: 'ffff::fff:8905:c723:9e36',
             netmask: 'ffff:ffff:ffff:ffff::',
@@ -53,19 +51,38 @@ const dummyNetworkInterfaces = {
             cidr: 'fe80::b4d4:8905:c723:9e36/64',
         },
         {
-            address: '169.254.158.54',
+            address: '169.254.158.50',
             netmask: '255.255.0.0',
             family: 'IPv4',
             mac: 'ff:ff:fc:90:2d:a9',
             internal: false,
-            cidr: '169.254.158.54/16',
+            cidr: '169.254.158.50/16',
+        },
+    ],
+    targetInterface: [
+        {
+            address: 'ffff::fff:8905:c723:9e36',
+            netmask: 'ffff:ffff:ffff:ffff::',
+            family: 'IPv6',
+            mac: 'ff:ff:fc:90:2d:a9',
+            scopeid: 13,
+            internal: false,
+            cidr: 'fe80::b4d4:8905:c723:9e36/64',
+        },
+        {
+            address: '195.88.54.16',
+            netmask: '255.255.255.255',
+            family: 'IPv4',
+            mac: 'ff:ff:fc:ff:ff:a9',
+            internal: false,
+            cidr: '195.88.54.16/32',
         },
     ],
 };
 
 describe('WsDiscovery', () => {
     const aD1: HuddlyDevice = new HuddlyDevice({ mac: 'A1' });
-    let wsdd: WsDiscovery, createSocketStub, networkInterfacesStub;
+    let wsdd: WsDiscovery, createSocketStub, networkInterfacesStub, bindStub;
     const wsddOptions = {
         timeout: 10,
     };
@@ -73,6 +90,7 @@ describe('WsDiscovery', () => {
     beforeEach(() => {
         dummySocket = new DummySocket();
         createSocketStub = sinon.stub(dgram, 'createSocket' as any).returns(dummySocket);
+        bindStub = sinon.stub(dummySocket, 'bind');
         networkInterfacesStub = sinon
             .stub(os, 'networkInterfaces' as any)
             .returns(dummyNetworkInterfaces);
@@ -81,15 +99,74 @@ describe('WsDiscovery', () => {
     afterEach(() => {
         createSocketStub.restore();
         networkInterfacesStub.restore();
+        bindStub.restore();
     });
 
-    describe('#bindSocket', () => {
-        it('should init class attributes', () => {
-            wsdd = new WsDiscovery(wsddOptions);
-            expect(wsdd.socket).to.equal(dummySocket);
-            expect(createSocketStub.calledOnce).to.equal(true);
-            expect(createSocketStub.getCall(0).args[0]).to.equal('udp4');
+    describe('#initNetworkInterfaces', () => {
+        describe('One or more link local interfaces', () => {
+            it('should only init all link local interfaces', () => {
+                wsdd = new WsDiscovery(wsddOptions);
+                expect(wsdd.socketConnections.baseInterface).to.equal(dummySocket);
+                expect(wsdd.socketConnections.linkLocalInterface).to.equal(dummySocket);
+                expect(wsdd.socketConnections.baseInterface).to.not.equal(undefined);
+                expect(wsdd.socketConnections.linkLocalInterface).to.not.equal(undefined);
+                expect(Object.keys(wsdd.socketConnections).length).to.equal(2);
+            });
+
+            it('should create sockets that bind to the respecitve interface addresses', () => {
+                wsdd = new WsDiscovery(wsddOptions);
+                expect(createSocketStub.calledTwice).to.equal(true);
+                expect(createSocketStub.getCall(0).args[0]).to.equal('udp4');
+                expect(createSocketStub.getCall(1).args[0]).to.equal('udp4');
+                expect(bindStub.getCall(0).args[0].address).to.equal(
+                    dummyNetworkInterfaces.baseInterface[1].address
+                );
+                expect(bindStub.getCall(1).args[0].address).to.equal(
+                    dummyNetworkInterfaces.linkLocalInterface[1].address
+                );
+            });
         });
+
+        describe('targeted interface', () => {
+            it('should only bind to matching interface if an address is provided', () => {
+                wsdd = new WsDiscovery({
+                    targetInterfaceAddr: '195.88.54.16',
+                });
+                expect(bindStub).to.have.been.calledWith({ address: '195.88.54.16' });
+                expect(Object.keys(wsdd.socketConnections).length).to.equal(1);
+                expect(wsdd.socketConnections.targetInterface).to.not.equal(undefined);
+            });
+            it('should only bind to matching interface if a name is provided', () => {
+                wsdd = new WsDiscovery({
+                    targetInterfaceName: 'targetInterface',
+                });
+                expect(bindStub).to.have.been.calledWith({ address: '195.88.54.16' });
+                expect(Object.keys(wsdd.socketConnections).length).to.equal(1);
+                expect(wsdd.socketConnections.targetInterface).to.not.equal(undefined);
+            });
+            it('should do nothing if address is provided an no matching interface is found', () => {
+                wsdd = new WsDiscovery({
+                    targetInterfaceAddr: '195.88.54.12',
+                });
+                expect(bindStub).to.have.callCount(0);
+            });
+            it('should do nothing if name is provided an no matching interface is found', () => {
+                wsdd = new WsDiscovery({
+                    targetInterfaceName: 'nothing',
+                });
+                expect(bindStub).to.have.callCount(0);
+            });
+        });
+
+        describe('probe entire network', () => {
+            it('should create only one socket named default that probes the entire network', () => {
+                wsdd = new WsDiscovery({ probeEntireNetwork: true });
+                expect(Object.keys(wsdd.socketConnections).length).to.equal(1);
+                expect(wsdd.socketConnections.default).to.not.equal(undefined);
+                expect(bindStub.getCall(0).args.length).to.equal(0);
+            });
+        });
+
         it('should re emit socket error', async () => {
             wsdd = new WsDiscovery(wsddOptions);
             const errorMessagePromise = new Promise(res => wsdd.on('ERROR', res));
@@ -100,152 +177,173 @@ describe('WsDiscovery', () => {
             expect(errorMessage).to.equal(errorMsg);
         });
 
-        it('should set multicast interface to provided interface addr', () => {
-            sinon.spy(dummySocket, 'setMulticastInterface');
-            wsdd = new WsDiscovery({
-                targetInterfaceAddr: '127.0.0.1',
-            });
-
-            expect(dummySocket.setMulticastInterface).to.have.been.calledWith('127.0.0.1');
-        });
-
-        it('should use base interface address by default', () => {
-            sinon.spy(dummySocket, 'setMulticastInterface');
-
-            wsdd = new WsDiscovery();
-
-            expect(dummySocket.setMulticastInterface).to.have.been.calledWith('169.254.158.54');
-        });
-
-        describe('watchInterface', () => {
-            let watchIfSpy;
-            beforeEach(() => {
-                watchIfSpy = sinon.spy(WsDiscovery.prototype, 'watchInterface');
-            });
-            afterEach(() => {
-                watchIfSpy.restore();
-            });
-            it('should call watchInterface for default when no BASE device present', () => {
-                networkInterfacesStub.returns({});
-                wsdd = new WsDiscovery();
-                expect(watchIfSpy.called).to.equal(true);
-                expect(watchIfSpy.getCall(0).args[0]).to.equal('default');
-            });
-            it('should call watchInterface for BASE interface', () => {
-                wsdd = new WsDiscovery();
-                expect(watchIfSpy.called).to.equal(true);
-                expect(watchIfSpy.getCall(0).args[0]).to.equal('baseKey');
-            });
+        it('should start watching network interfaces', () => {
+            wsdd = new WsDiscovery(wsddOptions);
+            expect(wsdd.networkInterfacesWatcher).to.not.equal(undefined);
         });
     });
 
-    describe('#watchInterface', () => {
-        let bindSocketStub, clock;
+    describe('#bindSocket', () => {
+        let socket, bindSpy;
         beforeEach(() => {
-            bindSocketStub = sinon.stub(WsDiscovery.prototype, 'bindSocket');
+            wsdd = new WsDiscovery(wsddOptions);
+            socket = new DummySocket();
+            bindSpy = sinon.spy(socket, 'bind');
+        });
+        afterEach(() => {
+            bindSpy.restore();
+        });
+        it('should bind socket to provided ip address', () => {
+            wsdd.bindSocket({ ip: '0.0.0.0', interfaceName: 'A name' }, socket);
+            expect(bindSpy).to.have.been.calledOnce;
+            expect(bindSpy).to.have.been.calledWith({ address: '0.0.0.0' });
+        });
+
+        it('should bind socket to the whole network when no ip address is provided', () => {
+            wsdd.bindSocket({ ip: undefined, interfaceName: 'Default' }, socket);
+            expect(bindSpy).to.have.been.calledOnce;
+            expect(bindSpy.getCall(0).args.length).to.equal(0);
+        });
+    });
+
+    describe('#networkInterfacesWatcher', () => {
+        let clock;
+        beforeEach(() => {
             clock = sinon.useFakeTimers();
         });
         afterEach(() => {
-            bindSocketStub.restore();
             clock.restore();
         });
 
-        describe('NO BASE', () => {
-            it('should not setup watcher for default interface', () => {
+        describe('default state', () => {
+            it('should have a socket bind to any new link local interfaces that appears', () => {
                 wsdd = new WsDiscovery();
-                wsdd.watchInterface('default');
-                expect(wsdd.interfaceWatcher).to.be.undefined;
+                networkInterfacesStub.restore();
+                networkInterfacesStub = sinon.stub(os, 'networkInterfaces' as any).returns({
+                    ...dummyNetworkInterfaces,
+                    newOne: [
+                        {},
+                        {
+                            family: 'IPv4',
+                            address: '169.254.0.0',
+                        },
+                    ],
+                });
+
+                clock.tick(1001);
+                expect(wsdd.socketConnections.newOne).to.equal(dummySocket);
+                expect(bindStub.getCall(2).args[0].address).to.equal('169.254.0.0');
+                expect(Object.keys(wsdd.socketConnections).length).to.equal(3);
             });
-        });
-        describe('BASE interface', () => {
-            it('should close socket when BASE interface is disconnected', () => {
-                bindSocketStub.restore();
+
+            it('should close the socket and remove it if a network interface disappears', () => {
                 sinon.spy(dummySocket, 'close');
                 wsdd = new WsDiscovery();
-                clock.tick(1000);
-                networkInterfacesStub.returns({});
-                clock.tick(1000);
-                expect(dummySocket.close).to.have.been.called;
-                expect(wsdd.ifStateConnected).to.equal(false);
+                networkInterfacesStub.restore();
+                networkInterfacesStub = sinon
+                    .stub(os, 'networkInterfaces' as any)
+                    .returns({ baseInterface: dummyNetworkInterfaces.baseInterface });
+
+                clock.tick(1001);
+                expect(wsdd.socketConnections.linkLocalInterface).to.equal(undefined);
+                expect(Object.keys(wsdd.socketConnections).length).to.equal(1);
+                expect(dummySocket.close).to.have.callCount(1);
             });
-            it('should re-bind socket when interface is re discovered/attached', () => {
-                bindSocketStub.restore();
-                wsdd = new WsDiscovery();
-                const spy = sinon.spy(wsdd, 'bindSocket');
-                wsdd.ifStateConnected = false;
-                clock.tick(1000);
-                clock.tick(1000);
-                expect(spy).to.have.been.called;
-                expect(wsdd.ifStateConnected).to.equal(true);
+        });
+        describe('targeted address or name', () => {
+            it('should connect to interface with target address if it appears', () => {
+                networkInterfacesStub.restore();
+                networkInterfacesStub = sinon
+                    .stub(os, 'networkInterfaces' as any)
+                    .returns({ baseInterface: dummyNetworkInterfaces.baseInterface });
+                wsdd = new WsDiscovery({ targetInterfaceAddr: '195.88.54.16' });
+                networkInterfacesStub.restore();
+                networkInterfacesStub = sinon
+                    .stub(os, 'networkInterfaces' as any)
+                    .returns({ targetInterface: dummyNetworkInterfaces.targetInterface });
+
+                clock.tick(1001);
+
+                expect(wsdd.socketConnections.targetInterface).to.equal(dummySocket);
+                expect(bindStub.getCall(0).args[0].address).to.equal('195.88.54.16');
+                expect(Object.keys(wsdd.socketConnections).length).to.equal(1);
             });
+        });
+        it('should do nothing if its setup to probe entire network', () => {
+            wsdd = new WsDiscovery({ probeEntireNetwork: true });
+            const findNetworkStub = sinon.stub(wsdd, 'findNetworkInterfaces').returns({
+                linkLocalMaps: [],
+                targetInterface: { ip: undefined, interfaceName: '' },
+            });
+            clock.tick(1001);
+            expect(wsdd.findNetworkInterfaces).to.have.callCount(0);
+            findNetworkStub.restore();
         });
     });
-
-    describe('#findL1HostInterface', () => {
-        let manufacturerStub;
-        beforeEach(() => {
-            manufacturerStub = sinon.stub(WsDiscovery.prototype, 'manufacturerFromMac');
-        });
-        afterEach(() => {
-            manufacturerStub?.restore();
-        });
-        it('should return a base interface', () => {
-            const dummyNetworkInterfaces = {
-                baseKey: [
-                    {
-                        address: '169.254.158.54',
-                        family: 'IPv4',
-                    },
-                ],
-            };
+    describe('#findNetworkInterfaces', () => {
+        it('should return all link local interfaces', () => {
             networkInterfacesStub.returns(dummyNetworkInterfaces);
-            manufacturerStub.returns(true);
             wsdd = new WsDiscovery(wsddOptions);
-            const map = wsdd.findL1HostInterface();
-            expect(map).to.deep.equal({ ip: '169.254.158.54', interface: 'baseKey' });
+            const netInterfaces = wsdd.findNetworkInterfaces();
+            expect(netInterfaces.linkLocalMaps).to.deep.equal([
+                { ip: '169.254.158.54', interfaceName: 'baseInterface' },
+                { ip: '169.254.158.50', interfaceName: 'linkLocalInterface' },
+            ]);
         });
         it('should ignore ipv6 interfaces', () => {
             const dummyNetworkInterfaces = { baseKey: [{ family: 'IPv6' }] };
             networkInterfacesStub.returns(dummyNetworkInterfaces);
             wsdd = new WsDiscovery(wsddOptions);
-            const map = wsdd.findL1HostInterface();
-            expect(map).to.deep.equal({ ip: undefined, interface: undefined });
+            const netInterfaces = wsdd.findNetworkInterfaces();
+            expect(netInterfaces.linkLocalMaps.length).to.equal(0);
         });
-        it('should ignore non-huddly vendors', () => {
-            const dummyNetworkInterfaces = { baseKey: [{ family: 'IPv4' }] };
-            networkInterfacesStub.returns(dummyNetworkInterfaces);
-            manufacturerStub.returns(false);
-            wsdd = new WsDiscovery(wsddOptions);
-            const map = wsdd.findL1HostInterface();
-            expect(map).to.deep.equal({ ip: undefined, interface: undefined });
-        });
-        it('should return the targeted interface', () => {
+        it('should ignore non-link local interfaces', () => {
             const dummyNetworkInterfaces = {
-                base1Key: [{ family: 'IPv4', address: '169.254.158.54' }],
-                base2Key: [{ family: 'IPv4', address: '169.254.158.55' }],
+                notLinkLocal: [{ family: 'IPv4', address: '142.4.42.2' }],
             };
             networkInterfacesStub.returns(dummyNetworkInterfaces);
-            manufacturerStub.returns(true);
-            wsdd = new WsDiscovery({ ...wsddOptions, targetInterfaceName: 'base2Key' });
-            const map = wsdd.findL1HostInterface();
-            expect(map).to.deep.equal({ ip: '169.254.158.55', interface: 'base2Key' });
+            wsdd = new WsDiscovery(wsddOptions);
+            const netInterfaces = wsdd.findNetworkInterfaces();
+            expect(netInterfaces.linkLocalMaps.length).to.equal(0);
+        });
+        it('should return the targeted interface by name', () => {
+            networkInterfacesStub.returns(dummyNetworkInterfaces);
+            wsdd = new WsDiscovery({ ...wsddOptions, targetInterfaceName: 'targetInterface' });
+            const netInterfaces = wsdd.findNetworkInterfaces();
+            expect(netInterfaces.targetInterface).to.deep.equal({
+                ip: '195.88.54.16',
+                interfaceName: 'targetInterface',
+            });
+        });
+        it('should return the targeted interface by ip', () => {
+            networkInterfacesStub.returns(dummyNetworkInterfaces);
+            wsdd = new WsDiscovery({ ...wsddOptions, targetInterfaceAddr: '195.88.54.16' });
+            const netInterfaces = wsdd.findNetworkInterfaces();
+            expect(netInterfaces.targetInterface).to.deep.equal({
+                ip: '195.88.54.16',
+                interfaceName: 'targetInterface',
+            });
         });
     });
 
-    describe('#linkLocalAddrAllowed', () => {
+    describe('#isDeviceAllowed', () => {
         it('should allow link local addresses by default', () => {
-            wsdd = new WsDiscovery(wsddOptions);
-            const allowed = wsdd.linkLocalAddrAllowed('169.254.10.10');
+            wsdd = new WsDiscovery({ ...wsddOptions });
+            const allowed = wsdd.isDeviceAllowed('169.254.10.10');
             expect(allowed).to.equal(true);
         });
-        it('should be ignored when option says so', () => {
-            wsdd = new WsDiscovery({ ...wsddOptions, ignoreLinkLocalDevices: true });
-            const allowed = wsdd.linkLocalAddrAllowed('169.254.10.10');
+        it('link local should be ignored when option says so and probing entire network', () => {
+            wsdd = new WsDiscovery({
+                ...wsddOptions,
+                probeEntireNetwork: true,
+                ignoreLinkLocalDevices: true,
+            });
+            const allowed = wsdd.isDeviceAllowed('169.254.10.10');
             expect(allowed).to.equal(false);
         });
-        it('should be allowed when option says so and ip is non-link local', () => {
-            wsdd = new WsDiscovery({ ...wsddOptions, ignoreLinkLocalDevices: true });
-            const allowed = wsdd.linkLocalAddrAllowed('10.1.0.10');
+        it('should allow anything when not probing entire network', () => {
+            wsdd = new WsDiscovery(wsddOptions);
+            const allowed = wsdd.isDeviceAllowed('10.1.0.10');
             expect(allowed).to.equal(true);
         });
     });
@@ -443,7 +541,11 @@ describe('WsDiscovery', () => {
         it('should return empty list for probes not related to messageId', done => {
             const msgId: String = '12345';
             uuidstub = sinon.stub(uuid, 'v4' as any).returns(msgId);
-            wsdd = new WsDiscovery({ timeout: 10000, socket: dummySocket });
+            wsdd = new WsDiscovery({
+                timeout: 10000,
+                socket: dummySocket,
+                targetInterfaceAddr: dummyNetworkInterfaces.targetInterface[1].address,
+            });
             const huddlyProbeMatch = `
         <?xml version="1.0" encoding="UTF-8"?>
         <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope">
@@ -453,16 +555,23 @@ describe('WsDiscovery', () => {
         </SOAP-ENV:Envelope>
       `;
 
+            const clock = sinon.useFakeTimers();
             const cb = (devices: HuddlyDevice[]) => {
                 expect(devices.length).to.equal(0);
                 done();
             };
             wsdd.probe(cb);
             dummySocket.emit('message', Buffer.from(huddlyProbeMatch));
+            clock.tick(10005);
+            clock.restore();
         });
 
         it('should return empty list when there is no probe match', done => {
-            wsdd = new WsDiscovery({ timeout: 100, socket: dummySocket });
+            wsdd = new WsDiscovery({
+                timeout: 100,
+                socket: dummySocket,
+                targetInterfaceAddr: dummyNetworkInterfaces.targetInterface[1].address,
+            });
             const huddlyProbeMatch = `
         <?xml version="1.0" encoding="UTF-8"?>
         <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope">
@@ -479,9 +588,8 @@ describe('WsDiscovery', () => {
             wsdd.probe(cb);
         });
 
-        it('should not send probe messages if interface where socket is bound is unavaliable', () => {
-            wsdd = new WsDiscovery({ timeout: 100, socket: dummySocket });
-            wsdd.ifStateConnected = false;
+        it('should not send probe messages if there are no sockets bounds to any interface', () => {
+            wsdd = new WsDiscovery({ timeout: 100, socket: dummySocket, targetInterfaceAddr: '0' });
             wsdd.probe();
             expect(setTimeoutStub).to.have.not.been.calledOnce;
         });
@@ -496,11 +604,11 @@ describe('WsDiscovery', () => {
             socketCloseStub.restore();
         });
 
-        it('should close socket', () => {
+        it('should close socket for all the connections made', () => {
             wsdd = new WsDiscovery({ socket: dummySocket });
             wsdd.close();
-            expect(socketCloseStub.called).to.equal(true);
-            expect(wsdd.socket).to.be.undefined;
+            expect(socketCloseStub).to.have.callCount(2);
+            expect(wsdd.socketConnections).to.equal(undefined);
         });
         it('should emit close when socket emits close event', () => {
             const spy = sinon.spy();
@@ -512,12 +620,12 @@ describe('WsDiscovery', () => {
             expect(spy.called).to.equal(true);
         });
 
-        it('should clear interfaceWatcher interval if it was set', () => {
+        it('should clear networkInterfacesWatcher interval if it was set', () => {
             sinon.spy(global, 'clearInterval');
             wsdd = new WsDiscovery({ socket: dummySocket });
             wsdd.close();
             expect(clearInterval).to.have.been.calledOnce;
-            expect(wsdd.interfaceWatcher).to.be.undefined;
+            expect(wsdd.networkInterfacesWatcher).to.be.undefined;
         });
     });
 });
