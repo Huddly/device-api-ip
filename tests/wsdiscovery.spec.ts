@@ -230,20 +230,25 @@ describe('WsDiscovery', () => {
         });
     });
 
-    describe('#linkLocalAddrAllowed', () => {
+    describe('#isDeviceAllowed', () => {
         it('should allow link local addresses by default', () => {
             wsdd = new WsDiscovery(wsddOptions);
-            const allowed = wsdd.linkLocalAddrAllowed('169.254.10.10');
+            const allowed = wsdd.isDeviceAllowed('169.254.10.10');
             expect(allowed).to.equal(true);
         });
-        it('should be ignored when option says so', () => {
+        it('link local should be ignored when option says so', () => {
             wsdd = new WsDiscovery({ ...wsddOptions, ignoreLinkLocalDevices: true });
-            const allowed = wsdd.linkLocalAddrAllowed('169.254.10.10');
+            const allowed = wsdd.isDeviceAllowed('169.254.10.10');
+            expect(allowed).to.equal(false);
+        });
+        it('should not allow anything beyond link local addresses by default', () => {
+            wsdd = new WsDiscovery(wsddOptions);
+            const allowed = wsdd.isDeviceAllowed('10.1.0.10');
             expect(allowed).to.equal(false);
         });
         it('should be allowed when option says so and ip is non-link local', () => {
-            wsdd = new WsDiscovery({ ...wsddOptions, ignoreLinkLocalDevices: true });
-            const allowed = wsdd.linkLocalAddrAllowed('10.1.0.10');
+            wsdd = new WsDiscovery({ ...wsddOptions, probeEntireNetwork: true });
+            const allowed = wsdd.isDeviceAllowed('10.1.0.10');
             expect(allowed).to.equal(true);
         });
     });

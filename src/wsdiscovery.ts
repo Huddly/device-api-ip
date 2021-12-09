@@ -107,13 +107,29 @@ export default class WsDiscovery extends EventEmitter {
         return map;
     }
 
-    linkLocalAddrAllowed(ipAddress: string): boolean {
-        if (this.opts.ignoreLinkLocalDevices || process.env.HUDDLY_WSDD_IGNORE_LINK_LOCAL_DEVICES) {
-            return !ipAddress.startsWith('169.254');
+    isLinkLocalAddr(ipAddress: string): boolean {
+        return ipAddress.startsWith('169.254');
+    }
+
+    isDeviceAllowed(deviceIpAddress: string): boolean {
+        const probeEntireNetwork =
+            this.opts.probeEntireNetwork || process.env.HUDDLY_WSDD_PROBE_ENTIRE_NETWORK;
+        const ignoreLinkLocalDevices =
+            this.opts.ignoreLinkLocalDevices || process.env.HUDDLY_WSDD_IGNORE_LINK_LOCAL_DEVICES;
+        const isLinkLocalAddr = this.isLinkLocalAddr(deviceIpAddress);
+
+        if (
+            probeEntireNetwork &&
+            (!isLinkLocalAddr || (isLinkLocalAddr && !ignoreLinkLocalDevices))
+        ) {
+            return true;
         }
 
-        // Default: allow link local
-        return true;
+        if (!probeEntireNetwork && isLinkLocalAddr && !ignoreLinkLocalDevices) {
+            return true;
+        }
+
+        return false;
     }
 
     generateMessageId(): String {
@@ -213,13 +229,22 @@ export default class WsDiscovery extends EventEmitter {
                         pid: this.networkDevicePID(name),
                     };
                     const device = new HuddlyDevice(deviceData);
-
-                    if (this.linkLocalAddrAllowed(device.ip.toString())) {
+                    if (this.isDeviceAllowed(device.ip.toString())) {
                         discoveredDevices.push(device);
                         this.emit('device', device);
                     } else {
                         Logger.debug(
-                            `Link local huddly ip camera detected. Instructions are set to ignore link local devices!`,
+                            `Ignoring device at ip address: ${device.ip.toString()}.`,
+                            WsDiscovery.name
+                        );
+                        Logger.debug(
+                            `Ignore local link devices: ${this.opts.ignoreLinkLocalDevices ||
+                                process.env.HUDDLY_WSDD_IGNORE_LINK_LOCAL_DEVICES}.`,
+                            WsDiscovery.name
+                        );
+                        Logger.debug(
+                            `Has full probing rights: ${this.opts.probeEntireNetwork ||
+                                process.env.PROBE_ENTIRE_NETWORK}`,
                             WsDiscovery.name
                         );
                     }
