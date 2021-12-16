@@ -7,20 +7,36 @@ import { HUDDLY_L1_PID } from '@huddly/sdk/lib/src/components/device/factory';
 import dgram from 'dgram';
 import uuid from 'node-uuid';
 import { EventEmitter } from 'events';
-import os from 'os';
+import os, { networkInterfaces } from 'os';
 
 const expect = chai.expect;
 chai.should();
 class DummySocket extends EventEmitter {
     send() {}
     close() {}
-    bind(cb) {
-        cb();
-    }
-    setMulticastInterface() {}
+    bind() {}
 }
 
 const dummyNetworkInterfaces = {
+    targetKey: [
+        {
+            address: 'fe80::b4d4:8905:c723:9e36',
+            netmask: 'ffff:ffff:ffff:ffff::',
+            family: 'IPv6',
+            mac: '90:e2:fc:90:2d:a9',
+            scopeid: 13,
+            internal: false,
+            cidr: 'fe80::b4d4:8905:c723:9e36/64',
+        },
+        {
+            address: '127.0.0.1',
+            netmask: '255.255.0.0',
+            family: 'IPv4',
+            mac: '90:e2:fc:90:2d:a9',
+            internal: false,
+            cidr: '169.254.158.54/16',
+        },
+    ],
     baseKey: [
         {
             address: 'fe80::b4d4:8905:c723:9e36',
@@ -51,7 +67,7 @@ const dummyNetworkInterfaces = {
             cidr: 'fe80::b4d4:8905:c723:9e36/64',
         },
         {
-            address: '169.254.158.54',
+            address: '222.254.158.54',
             netmask: '255.255.0.0',
             family: 'IPv4',
             mac: 'ff:ff:fc:90:2d:a9',
@@ -63,7 +79,7 @@ const dummyNetworkInterfaces = {
 
 describe('WsDiscovery', () => {
     const aD1: HuddlyDevice = new HuddlyDevice({ mac: 'A1' });
-    let wsdd: WsDiscovery, createSocketStub, networkInterfacesStub;
+    let wsdd: WsDiscovery, createSocketStub, networkInterfacesStub, bindSpy, clearIntervalSpy;
     const wsddOptions = {
         timeout: 10,
     };
@@ -71,6 +87,8 @@ describe('WsDiscovery', () => {
     beforeEach(() => {
         dummySocket = new DummySocket();
         createSocketStub = sinon.stub(dgram, 'createSocket' as any).returns(dummySocket);
+        bindSpy = sinon.spy(dummySocket, 'bind');
+        clearIntervalSpy = sinon.spy(global, 'clearInterval');
         networkInterfacesStub = sinon
             .stub(os, 'networkInterfaces' as any)
             .returns(dummyNetworkInterfaces);
@@ -79,6 +97,15 @@ describe('WsDiscovery', () => {
     afterEach(() => {
         createSocketStub.restore();
         networkInterfacesStub.restore();
+        bindSpy.restore();
+        clearIntervalSpy.restore();
+    });
+
+    it('should start listening for network interfaces', () => {
+        const setIntervalSpy = sinon.spy(global, 'setInterval');
+        wsdd = new WsDiscovery({ targetInterfaceAddr: '0.0.0.1' });
+        expect(setIntervalSpy).to.have.been.calledOnce;
+        setIntervalSpy.restore();
     });
 
     describe('#bindSocket', () => {
@@ -97,22 +124,49 @@ describe('WsDiscovery', () => {
             const errorMessage = await errorMessagePromise;
             expect(errorMessage).to.equal(errorMsg);
         });
-
-        it('should set multicast interface to provided interface addr', () => {
-            sinon.spy(dummySocket, 'setMulticastInterface');
+        it('should bind socket to provided interface addr', () => {
             wsdd = new WsDiscovery({
                 targetInterfaceAddr: '127.0.0.1',
             });
-
-            expect(dummySocket.setMulticastInterface).to.have.been.calledWith('127.0.0.1');
+            expect(dummySocket.bind).to.have.been.calledWith({ address: '127.0.0.1' });
         });
 
         it('should use base interface address by default', () => {
-            sinon.spy(dummySocket, 'setMulticastInterface');
-
             wsdd = new WsDiscovery();
+            expect(dummySocket.bind).to.have.been.calledWith({ address: '169.254.158.54' });
+        });
 
-            expect(dummySocket.setMulticastInterface).to.have.been.calledWith('169.254.158.54');
+        it('should bind to the entire network if specified', () => {
+            networkInterfacesStub.restore();
+            networkInterfacesStub = sinon
+                .stub(os, 'networkInterfaces' as any)
+                .returns({ dummyKey: dummyNetworkInterfaces.dummyKey });
+            wsdd = new WsDiscovery({ probeEntireNetwork: true });
+            expect(bindSpy).to.have.been.calledOnce;
+            expect(bindSpy.args[0].length).to.equal(0);
+        });
+
+        it('should stop listening for new network interfaces if one is found', () => {
+            wsdd = new WsDiscovery();
+            expect(clearIntervalSpy).to.have.been.calledOnce;
+        });
+
+        it('should not bind if no link local device and probeEntireNetwork is false', () => {
+            networkInterfacesStub.restore();
+            networkInterfacesStub = sinon
+                .stub(os, 'networkInterfaces' as any)
+                .returns({ dummyKey: dummyNetworkInterfaces.dummyKey });
+            wsdd = new WsDiscovery();
+            expect(bindSpy.callCount).to.equal(0);
+        });
+
+        it('should start interface watcher if no link local device and probeEntireNetwork is false ', () => {
+            networkInterfacesStub.restore();
+            networkInterfacesStub = sinon
+                .stub(os, 'networkInterfaces' as any)
+                .returns({ dummyKey: dummyNetworkInterfaces.dummyKey });
+            wsdd = new WsDiscovery();
+            expect(bindSpy.callCount).to.equal(0);
         });
 
         describe('watchInterface', () => {
@@ -122,12 +176,6 @@ describe('WsDiscovery', () => {
             });
             afterEach(() => {
                 watchIfSpy.restore();
-            });
-            it('should call watchInterface for default when no BASE device present', () => {
-                networkInterfacesStub.returns({});
-                wsdd = new WsDiscovery();
-                expect(watchIfSpy.called).to.equal(true);
-                expect(watchIfSpy.getCall(0).args[0]).to.equal('default');
             });
             it('should call watchInterface for BASE interface', () => {
                 wsdd = new WsDiscovery();
@@ -148,9 +196,9 @@ describe('WsDiscovery', () => {
             clock.restore();
         });
 
-        describe('NO BASE', () => {
+        describe('Probing entire network', () => {
             it('should not setup watcher for default interface', () => {
-                wsdd = new WsDiscovery();
+                wsdd = new WsDiscovery({ probeEntireNetwork: true });
                 wsdd.watchInterface('default');
                 expect(wsdd.interfaceWatcher).to.be.undefined;
             });
@@ -179,7 +227,7 @@ describe('WsDiscovery', () => {
         });
     });
 
-    describe('#findL1HostInterface', () => {
+    describe('#findHostInterface', () => {
         let manufacturerStub;
         beforeEach(() => {
             manufacturerStub = sinon.stub(WsDiscovery.prototype, 'manufacturerFromMac');
@@ -199,14 +247,14 @@ describe('WsDiscovery', () => {
             networkInterfacesStub.returns(dummyNetworkInterfaces);
             manufacturerStub.returns(true);
             wsdd = new WsDiscovery(wsddOptions);
-            const map = wsdd.findL1HostInterface();
+            const map = wsdd.findHostInterface();
             expect(map).to.deep.equal({ ip: '169.254.158.54', interface: 'baseKey' });
         });
         it('should ignore ipv6 interfaces', () => {
             const dummyNetworkInterfaces = { baseKey: [{ family: 'IPv6' }] };
             networkInterfacesStub.returns(dummyNetworkInterfaces);
             wsdd = new WsDiscovery(wsddOptions);
-            const map = wsdd.findL1HostInterface();
+            const map = wsdd.findHostInterface();
             expect(map).to.deep.equal({ ip: undefined, interface: undefined });
         });
         it('should ignore non-huddly vendors', () => {
@@ -214,7 +262,7 @@ describe('WsDiscovery', () => {
             networkInterfacesStub.returns(dummyNetworkInterfaces);
             manufacturerStub.returns(false);
             wsdd = new WsDiscovery(wsddOptions);
-            const map = wsdd.findL1HostInterface();
+            const map = wsdd.findHostInterface();
             expect(map).to.deep.equal({ ip: undefined, interface: undefined });
         });
         it('should return the targeted interface', () => {
@@ -225,7 +273,7 @@ describe('WsDiscovery', () => {
             networkInterfacesStub.returns(dummyNetworkInterfaces);
             manufacturerStub.returns(true);
             wsdd = new WsDiscovery({ ...wsddOptions, targetInterfaceName: 'base2Key' });
-            const map = wsdd.findL1HostInterface();
+            const map = wsdd.findHostInterface();
             expect(map).to.deep.equal({ ip: '169.254.158.55', interface: 'base2Key' });
         });
     });
@@ -511,8 +559,8 @@ describe('WsDiscovery', () => {
         });
 
         it('should clear interfaceWatcher interval if it was set', () => {
-            sinon.spy(global, 'clearInterval');
             wsdd = new WsDiscovery({ socket: dummySocket });
+            clearIntervalSpy.resetHistory();
             wsdd.close();
             expect(clearInterval).to.have.been.calledOnce;
             expect(wsdd.interfaceWatcher).to.be.undefined;
