@@ -24,7 +24,7 @@ describe('GrpcTransport', () => {
     describe('#grpcConnectionDeadlineSeconds', () => {
         describe('get', () => {
             it('should return default deadline', () => {
-                expect(transport.grpcConnectionDeadlineSeconds).to.equal(1);
+                expect(transport.grpcConnectionDeadlineSeconds).to.equal(2);
             });
         });
         describe('set', () => {

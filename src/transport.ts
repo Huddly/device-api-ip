@@ -9,7 +9,7 @@ export default class GrpcTransport extends EventEmitter implements IGrpcTranspor
     eventLoopSpeed: number;
 
     private _device: HuddlyDevice;
-    private _grpcConnectionDeadlineSeconds: number = 1;
+    private _grpcConnectionDeadlineSeconds: number = 2;
     private readonly GRPC_PORT: number = 50051;
     private _grpcClient: HuddlyServiceClient;
 
