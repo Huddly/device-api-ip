@@ -4,8 +4,9 @@ import et from 'elementtree';
 import { v4 as uuidv4 } from 'node-uuid';
 import dgram from 'dgram';
 import { networkInterfaces } from 'os';
-import Logger from '@huddly/sdk/lib/src/utilitis/logger';
-import { HUDDLY_L1_PID } from '@huddly/sdk/lib/src/components/device/factory';
+
+import Logger from '@huddly/sdk-interfaces/lib/statics/Logger';
+import HuddlyHEX from '@huddly/sdk-interfaces/lib/enums/HuddlyHex';
 
 export default class WsDiscovery extends EventEmitter {
     maxDelay: number;
@@ -135,7 +136,7 @@ export default class WsDiscovery extends EventEmitter {
     networkDevicePID(name: String): number {
         switch (name) {
             case 'L1':
-                return HUDDLY_L1_PID;
+                return HuddlyHEX.L1_PID;
             default:
                 return 0x00;
         }

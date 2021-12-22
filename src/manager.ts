@@ -1,6 +1,8 @@
-import IDeviceDiscovery from '@huddly/sdk/lib/src/interfaces/iDeviceDiscovery';
-import Logger from '@huddly/sdk/lib/src/utilitis/logger';
 import { EventEmitter } from 'stream';
+
+import IDeviceDiscovery from '@huddly/sdk-interfaces/lib/interfaces/IDeviceDiscovery';
+import Logger from '@huddly/sdk-interfaces/lib/statics/Logger';
+
 import HuddlyDevice from './networkdevice';
 import WsDiscovery from './wsdiscovery';
 
