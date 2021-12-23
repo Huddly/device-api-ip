@@ -1,13 +1,15 @@
-import IHuddlyDeviceAPI from '@huddly/sdk/lib/src/interfaces/iHuddlyDeviceAPI';
 import { EventEmitter } from 'events';
-import IUVCControlAPI from '@huddly/sdk/lib/src/interfaces/iUVCControlApi';
-import IDeviceDiscovery from '@huddly/sdk/lib/src/interfaces/iDeviceDiscovery';
-import DeviceApiOpts from '@huddly/sdk/lib/src/interfaces/IDeviceApiOpts';
+
+import IHuddlyDeviceAPI from '@huddly/sdk-interfaces/lib/interfaces/IHuddlyDeviceAPI';
+import IUVCControlAPI from '@huddly/sdk-interfaces/lib/interfaces/IUVCControlApi';
+import IDeviceDiscovery from '@huddly/sdk-interfaces/lib/interfaces/IDeviceDiscovery';
+import DeviceApiOpts from '@huddly/sdk-interfaces/lib/interfaces/IDeviceApiOpts';
+import IGrpcTransport from '@huddly/sdk-interfaces/lib/interfaces/IGrpcTransport';
+import Logger from '@huddly/sdk-interfaces/lib/statics/Logger';
+
 import DeviceDiscoveryManager from './manager';
-import Logger from '@huddly/sdk/lib/src/utilitis/logger';
 import HuddlyDevice from './networkdevice';
 import GrpcTransport from './transport';
-import IGrpcTransport from '@huddly/sdk/lib/src/interfaces/IGrpcTransport';
 
 export default class HuddlyDeviceApiIP implements IHuddlyDeviceAPI {
     eventEmitter: EventEmitter;

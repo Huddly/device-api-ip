@@ -1,6 +1,7 @@
 import chai from 'chai';
 import HuddlyDevice from './../src/networkdevice';
-import { HUDDLY_L1_PID } from '@huddly/sdk/lib/src/components/device/factory';
+
+import HuddlyHEX from '@huddly/sdk-interfaces/lib/enums/HuddlyHex';
 
 const expect = chai.expect;
 chai.should();
@@ -70,7 +71,7 @@ describe('HuddlyDeviceApiIP', () => {
                 ip: '1.2.3.4',
                 serialNumber: '156434325642',
                 modelName: 'ORANGE',
-                pid: HUDDLY_L1_PID,
+                pid: HuddlyHEX.L1_PID,
             };
             const device: HuddlyDevice = new HuddlyDevice(data);
             expect(device.infoObject()).to.deep.equal({
@@ -94,7 +95,7 @@ describe('HuddlyDeviceApiIP', () => {
                 ip: '1.2.3.4',
                 serialNumber: '156434325642',
                 modelName: 'ORANGE',
-                pid: HUDDLY_L1_PID,
+                pid: HuddlyHEX.L1_PID,
                 types: ['a', 'b'],
                 scopes: ['c', 'd'],
                 metadataVersion: '3232',

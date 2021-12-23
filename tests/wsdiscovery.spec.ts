@@ -1,9 +1,11 @@
 import chai from 'chai';
 import sinon from 'sinon';
 import sleep from 'await-sleep';
+
+import HuddlyHEX from '@huddly/sdk-interfaces/lib/enums/HuddlyHex';
+
 import HuddlyDevice from './../src/networkdevice';
 import WsDiscovery from './../src/wsdiscovery';
-import { HUDDLY_L1_PID } from '@huddly/sdk/lib/src/components/device/factory';
 import dgram from 'dgram';
 import uuid from 'node-uuid';
 import { EventEmitter } from 'events';
@@ -279,7 +281,7 @@ describe('WsDiscovery', () => {
         it('should return custom PID for L1', () => {
             wsdd = new WsDiscovery(wsddOptions);
             const pid: number = wsdd.networkDevicePID('L1');
-            expect(pid).to.equal(HUDDLY_L1_PID);
+            expect(pid).to.equal(HuddlyHEX.L1_PID);
         });
         it('should return 0 for unknown device name', () => {
             wsdd = new WsDiscovery(wsddOptions);
