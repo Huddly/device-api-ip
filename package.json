@@ -37,7 +37,8 @@
     "prettier-check": "./node_modules/.bin/prettier --config ./.prettierrc --check src/**/*.ts tests/**/*.spec.ts",
     "test": "nyc mocha -r ts-node/register --recursive \"tests/**/*.spec.ts\" --exit",
     "test-js": "mocha -r ts-node/register --recursive \"lib/tests/**/*.spec.js\"",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "audit-check": "node ./scripts/checkVulnerabilities.js"
   },
   "files": [
     "lib",
