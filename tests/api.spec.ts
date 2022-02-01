@@ -7,6 +7,8 @@ import GrpcTransport from './../src/transport';
 import HuddlyDeviceApiIP from './../src/index';
 import HuddlyDevice from './../src/networkdevice';
 
+import HuddlyHEX from '@huddly/sdk-interfaces/lib/enums/HuddlyHex';
+
 const expect = chai.expect;
 chai.should();
 chai.use(sinonChai);
@@ -14,6 +16,7 @@ chai.use(sinonChai);
 const mockedDevices: HuddlyDevice[] = [
     new HuddlyDevice({
         name: 'L1',
+        pid: HuddlyHEX.L1_PID,
         serialNumber: '1234566445',
         manufacturer: 'Huddly',
         mac: 'FF:FF:FF:FF:FF:FF',
