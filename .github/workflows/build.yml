@@ -10,6 +10,9 @@ on:
   pull_request:
     branches:
       - '*'
+  schedule:
+    # Trigger workflow run every workday (Mon-Fri) at 0700
+    - cron:  '0 7 * * 1,2,3,4,5'
 
 jobs:
   build:
@@ -47,3 +50,21 @@ jobs:
       - run: npm run build
       - run: npm run tslint
       - run: npm run prettier-check
+      - run: npm run audit-check
+
+  slack-notify:
+    name: "Notify Failure"
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    if: always() && (needs.build.result == 'failure') && (github.ref == 'refs/heads/master')
+    steps:
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: sdk
+          SLACK_COLOR: "#ff5050"
+          SLACK_ICON: https://www.huddly.com/content/uploads/2018/10/huddly-logo-white-300x300.png?size=48
+          SLACK_MESSAGE: 'device-api-ip pipeline failed on master! Attention needed.'
+          SLACK_TITLE: Build Failed!
+          SLACK_USERNAME: "Github Actions"
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
