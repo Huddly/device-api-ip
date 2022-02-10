@@ -270,8 +270,6 @@ export default class WsDiscovery extends EventEmitter {
     }
 
     probe(callback: any = () => {}): void {
-        const self = this;
-
         const messageId = this.generateMessageId();
         const body = this.makeDiscoveryBody(messageId);
         const discoveredDevices: HuddlyDevice[] = [];

@@ -572,14 +572,6 @@ describe('WsDiscovery', () => {
                 socket: dummySocket,
                 targetInterfaceAddr: dummyNetworkInterfaces.targetInterface[1].address,
             });
-            const huddlyProbeMatch = `
-        <?xml version="1.0" encoding="UTF-8"?>
-        <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope">
-          <SOAP-ENV:Header>
-            <wsa:RelatesTo>urn:uuid:000000000000000</wsa:RelatesTo>
-          </SOAP-ENV:Header>
-        </SOAP-ENV:Envelope>
-      `;
 
             const cb = (devices: HuddlyDevice[]) => {
                 expect(devices.length).to.equal(0);
