@@ -538,6 +538,48 @@ describe('WsDiscovery', () => {
             dummySocket.emit('message', Buffer.from(huddlyProbeMatch));
         });
 
+        it('should not consider non huddly manufactured devices', done => {
+            const wsddEmitSpy = sinon.spy();
+            uuidstub = sinon.stub(uuid, 'v4' as any).returns('12345');
+            wsdd = new WsDiscovery({ timeout: 10000 });
+            const data: any = {
+                serialNumber: '122211222',
+                mac: 'A1:B2:C3:D4:F5:11',
+            };
+            const huddlyProbeMatch = `
+                <?xml version="1.0" encoding="UTF-8"?>
+                <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope">
+                <SOAP-ENV:Header>
+                    <wsa:RelatesTo>urn:uuid:12345</wsa:RelatesTo>
+                </SOAP-ENV:Header>
+                <SOAP-ENV:Body>
+                    <wsdd:ProbeMatches>
+                    <wsdd:ProbeMatch>
+                        <wsdd:Scopes>onvif://www.onvif.org/name/Dummy onvif://www.onvif.org/Profile/Streaming onvif://www.onvif.org/serial/${data.serialNumber} onvif://www.onvif.org/mac/${data.mac}</wsdd:Scopes>
+                        <wsdd:XAddrs>http://1.1.1.1:1000/onvif/device_service</wsdd:XAddrs>
+                        <wsdd:MetadataVersion>1.2</wsdd:MetadataVersion>
+                    </wsdd:ProbeMatch>
+                    </wsdd:ProbeMatches>
+                </SOAP-ENV:Body>
+                </SOAP-ENV:Envelope>
+            `;
+
+            wsdd.on('device', wsddEmitSpy);
+            let deviceEmitCallCount = 0;
+            let cbDeviceListCount = 0;
+            const cb = (devices: HuddlyDevice[]) => {
+                deviceEmitCallCount += wsddEmitSpy.callCount;
+                cbDeviceListCount += devices.length;
+            };
+            wsdd.probe(cb);
+            setTimeout(() => {
+                expect(deviceEmitCallCount).to.equal(0);
+                expect(cbDeviceListCount).to.equal(0);
+                done();
+            }, 500);
+            dummySocket.emit('message', Buffer.from(huddlyProbeMatch));
+        });
+
         it('should return empty list for probes not related to messageId', done => {
             const msgId: String = '12345';
             uuidstub = sinon.stub(uuid, 'v4' as any).returns(msgId);
@@ -572,14 +614,6 @@ describe('WsDiscovery', () => {
                 socket: dummySocket,
                 targetInterfaceAddr: dummyNetworkInterfaces.targetInterface[1].address,
             });
-            const huddlyProbeMatch = `
-        <?xml version="1.0" encoding="UTF-8"?>
-        <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope">
-          <SOAP-ENV:Header>
-            <wsa:RelatesTo>urn:uuid:000000000000000</wsa:RelatesTo>
-          </SOAP-ENV:Header>
-        </SOAP-ENV:Envelope>
-      `;
 
             const cb = (devices: HuddlyDevice[]) => {
                 expect(devices.length).to.equal(0);

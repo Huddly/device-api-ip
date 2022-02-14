@@ -270,8 +270,6 @@ export default class WsDiscovery extends EventEmitter {
     }
 
     probe(callback: any = () => {}): void {
-        const self = this;
-
         const messageId = this.generateMessageId();
         const body = this.makeDiscoveryBody(messageId);
         const discoveredDevices: HuddlyDevice[] = [];
@@ -308,9 +306,11 @@ export default class WsDiscovery extends EventEmitter {
                     };
                     const device = new HuddlyDevice(deviceData);
                     if (this.isDeviceAllowed(device.ip.toString())) {
+                        if (device.manufacturer == this.HUDDLY_MANUFACTURER_NAME) {
+                            discoveredDevices.push(device);
+                            this.emit('device', device);
+                        }
                         clearTimeout(probeTimeout);
-                        discoveredDevices.push(device);
-                        this.emit('device', device);
                         callback(discoveredDevices);
                     } else {
                         Logger.debug(
