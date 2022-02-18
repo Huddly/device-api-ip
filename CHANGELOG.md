@@ -1,3 +1,32 @@
+#### 0.1.6 (2022-02-18)
+
+##### Chores
+
+*  Build & Test with node 16 ([1111ccfa](https://github.com/Huddly/device-api-ip/commit/1111ccfa5e9c808b5cf6cd892d104333420fc3ac))
+*  resolve dependeny vulnerabilities ([0812ff2e](https://github.com/Huddly/device-api-ip/commit/0812ff2e1dc8085934051a48f1fcc49354b80ccb))
+
+##### New Features
+
+*  Slack notify when build fails (master) ([debfca33](https://github.com/Huddly/device-api-ip/commit/debfca33d91375e3ea0a8fc3ed26da9a145d4bfe))
+*  Cron trigger master branch (Mon-Fri @ 0700) ([7566f332](https://github.com/Huddly/device-api-ip/commit/7566f3326674f97a35f08698596e17781d71f9c0))
+*  Allow audit check to have a whitelist ([17b97f8e](https://github.com/Huddly/device-api-ip/commit/17b97f8e9fd062ad76243b7d7083c26d222f2371))
+*  Introduce dependency audit-check ([d0579133](https://github.com/Huddly/device-api-ip/commit/d0579133de7ba856eb436580cbd61ade821d6d68))
+
+##### Bug Fixes
+
+*  Wsdd discover only huddly manufactured devices ([08f84221](https://github.com/Huddly/device-api-ip/commit/08f84221ab80fda1508c218a32b4d58882d8f193))
+*  Vulnerability check fix with node 16 ([9cb9167b](https://github.com/Huddly/device-api-ip/commit/9cb9167b2d5e5b776df5d3758169990ffa075acc))
+*  Update registry url for npmjs to use https ([e2d68e0a](https://github.com/Huddly/device-api-ip/commit/e2d68e0ae39f6b117519d5b0c71048e129198fb3))
+* **package.json:**  Win does not recognize '.' ([1187fce3](https://github.com/Huddly/device-api-ip/commit/1187fce32c97c91c69d40741306041452d66ca62))
+
+##### Refactors
+
+*  Remove unused code ([c5d72176](https://github.com/Huddly/device-api-ip/commit/c5d7217670db2aa5ad7ff6f5fdeb191c474b0ca2))
+
+##### Tests
+
+*  Install chalk-js for terminal styling ([9a564e21](https://github.com/Huddly/device-api-ip/commit/9a564e219d443e7bf3fcc8a22c7b8f8c2cff49d7))
+
 #### 0.1.5 (2022-01-26)
 
 ##### New Features
