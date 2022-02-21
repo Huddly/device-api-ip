@@ -337,12 +337,14 @@ export default class WsDiscovery extends EventEmitter {
                 callback(discoveredDevices);
             }, this.opts.timeout);
 
-            socket.on('message', message => {
+            const listener = message => {
                 onProbeResponseHandler(message, probeTimeout);
-            });
+            };
+
+            socket.on('message', listener);
 
             setTimeout(() => {
-                socket.removeListener('message', onProbeResponseHandler);
+                socket.removeListener('message', listener);
             }, this.opts.timeout);
 
             this.setTimeoutWithRandomDelay(
