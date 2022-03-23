@@ -231,7 +231,7 @@ export default class WsDiscovery extends EventEmitter {
             case 'L1':
                 return HuddlyHEX.L1_PID;
             case 'S1':
-                return 0x5ee; // HuddlyHEX.S1_PID
+                return HuddlyHEX.S1_PID;
             default:
                 return 0x00;
         }

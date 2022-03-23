@@ -381,6 +381,11 @@ describe('WsDiscovery', () => {
             const pid: number = wsdd.networkDevicePID('L1');
             expect(pid).to.equal(HuddlyHEX.L1_PID);
         });
+        it('should return custom PID for S1', () => {
+            wsdd = new WsDiscovery(wsddOptions);
+            const pid: number = wsdd.networkDevicePID('S1');
+            expect(pid).to.equal(HuddlyHEX.S1_PID);
+        });
         it('should return 0 for unknown device name', () => {
             wsdd = new WsDiscovery(wsddOptions);
             const pid: number = wsdd.networkDevicePID('HelloWorld');
