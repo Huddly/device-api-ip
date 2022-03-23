@@ -16,11 +16,7 @@ export default class HuddlyDeviceApiIP implements IHuddlyDeviceAPI {
     eventEmitter: EventEmitter;
     deviceDiscoveryManager: DeviceDiscoveryManager;
 
-    private readonly SUPPORTED_DEVICE_PIDS: Number[] = [
-        HuddlyHEX.L1_PID,
-        0x5ee,
-        // HuddlyHEX.S1_PID
-    ];
+    private readonly SUPPORTED_DEVICE_PIDS: Number[] = [HuddlyHEX.L1_PID, HuddlyHEX.S1_PID];
 
     constructor(opts: DeviceApiOpts = {}) {
         this.deviceDiscoveryManager = opts.manager || new DeviceDiscoveryManager(opts);
