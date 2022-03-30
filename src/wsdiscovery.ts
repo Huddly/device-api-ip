@@ -230,6 +230,8 @@ export default class WsDiscovery extends EventEmitter {
         switch (name) {
             case 'L1':
                 return HuddlyHEX.L1_PID;
+            case 'S1':
+                return HuddlyHEX.S1_PID;
             default:
                 return 0x00;
         }

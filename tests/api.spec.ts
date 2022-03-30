@@ -7,6 +7,8 @@ import GrpcTransport from './../src/transport';
 import HuddlyDeviceApiIP from './../src/index';
 import HuddlyDevice from './../src/networkdevice';
 
+import HuddlyHEX from '@huddly/sdk-interfaces/lib/enums/HuddlyHex';
+
 const expect = chai.expect;
 chai.should();
 chai.use(sinonChai);
@@ -14,6 +16,7 @@ chai.use(sinonChai);
 const mockedDevices: HuddlyDevice[] = [
     new HuddlyDevice({
         name: 'L1',
+        pid: HuddlyHEX.L1_PID,
         serialNumber: '1234566445',
         manufacturer: 'Huddly',
         mac: 'FF:FF:FF:FF:FF:FF',
@@ -29,6 +32,20 @@ const mockedDevices: HuddlyDevice[] = [
         name: 'DUMMY',
         serialNumber: '12000045',
         manufacturer: 'JohnDoe Co',
+        mac: 'FF:FF:FF:FF:FF:FF',
+        ip: '',
+        types: [],
+        scopes: [],
+        xaddrs: 'Unknown',
+        modelName: 'Unknown',
+        metadataVersion: 'Unknown',
+        messageId: 'Unknown',
+    }),
+    new HuddlyDevice({
+        name: 'S1',
+        pid: HuddlyHEX.S1_PID,
+        serialNumber: '1234566445',
+        manufacturer: 'Huddly',
         mac: 'FF:FF:FF:FF:FF:FF',
         ip: '',
         types: [],
@@ -114,7 +131,7 @@ describe('HuddlyDeviceApiIP', () => {
             });
         });
 
-        describe('for L1', () => {
+        describe('for IP Cameras', () => {
             let transportstub;
             let getTransportStub;
             beforeEach(() => {
@@ -124,9 +141,15 @@ describe('HuddlyDeviceApiIP', () => {
                 getTransportStub.restore();
             });
 
-            it('should support grpc transport implementation', async () => {
+            it('should support grpc transport implementation for L1', async () => {
                 getTransportStub = sinon.stub(deviceApi, 'getTransport').returns(transportstub);
                 const supported = await deviceApi.getValidatedTransport(mockedDevices[0]);
+                expect(supported).to.be.instanceof(GrpcTransport);
+            });
+
+            it('should support grpc transport implementation for S1', async () => {
+                getTransportStub = sinon.stub(deviceApi, 'getTransport').returns(transportstub);
+                const supported = await deviceApi.getValidatedTransport(mockedDevices[2]);
                 expect(supported).to.be.instanceof(GrpcTransport);
             });
 

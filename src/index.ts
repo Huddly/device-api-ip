@@ -5,6 +5,7 @@ import IUVCControlAPI from '@huddly/sdk-interfaces/lib/interfaces/IUVCControlApi
 import IDeviceDiscovery from '@huddly/sdk-interfaces/lib/interfaces/IDeviceDiscovery';
 import DeviceApiOpts from '@huddly/sdk-interfaces/lib/interfaces/IDeviceApiOpts';
 import IGrpcTransport from '@huddly/sdk-interfaces/lib/interfaces/IGrpcTransport';
+import HuddlyHEX from '@huddly/sdk-interfaces/lib/enums/HuddlyHex';
 import Logger from '@huddly/sdk-interfaces/lib/statics/Logger';
 
 import DeviceDiscoveryManager from './manager';
@@ -15,7 +16,7 @@ export default class HuddlyDeviceApiIP implements IHuddlyDeviceAPI {
     eventEmitter: EventEmitter;
     deviceDiscoveryManager: DeviceDiscoveryManager;
 
-    private readonly SUPPORTED_DEVICES: String[] = ['L1'];
+    private readonly SUPPORTED_DEVICE_PIDS: Number[] = [HuddlyHEX.L1_PID, HuddlyHEX.S1_PID];
 
     constructor(opts: DeviceApiOpts = {}) {
         this.deviceDiscoveryManager = opts.manager || new DeviceDiscoveryManager(opts);
@@ -38,15 +39,11 @@ export default class HuddlyDeviceApiIP implements IHuddlyDeviceAPI {
             return undefined;
         }
 
-        if (
-            device &&
-            (device.manufacturer != 'Huddly' || !this.SUPPORTED_DEVICES.includes(device.name))
-        ) {
+        if (!this.SUPPORTED_DEVICE_PIDS.includes(device.productId)) {
             Logger.warn(
-                `There is no supported ip/network transport implementation for given device!`,
+                `GRPC is not supported for Huddly device with PID ${device.productId}`,
                 HuddlyDeviceApiIP.name
             );
-            Logger.warn(`Device is: ${device.toString()}`);
             return undefined;
         }
 

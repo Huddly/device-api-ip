@@ -78,7 +78,7 @@
     "url": "https://github.com/Huddly/device-api-ip/issues"
   },
   "dependencies": {
-    "@huddly/sdk-interfaces": "^0.1.1",
+    "@huddly/sdk-interfaces": "^0.2.0",
     "@types/node": "^13.1.2",
     "chalk": "^4.1.2",
     "dgram": "^1.0.1",
