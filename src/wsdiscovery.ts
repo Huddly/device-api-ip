@@ -54,8 +54,7 @@ export default class WsDiscovery extends EventEmitter {
     }
 
     initNetworkInterfaces(): void {
-        const probeEntireNetwork =
-            this.opts.probeEntireNetwork || process.env.HUDDLY_WSDD_PROBE_ENTIRE_NETWORK;
+        const probeEntireNetwork = true;
         const networkInterfaces = this.findNetworkInterfaces();
         if (this.opts.targetInterfaceAddr || this.opts.targetInterfaceName) {
             const { interfaceName, ip } = networkInterfaces.targetInterface;
@@ -136,7 +135,7 @@ export default class WsDiscovery extends EventEmitter {
         const checkForDisconnect = (maps: InterfaceMap[]) => {
             const flattenedMaps = maps.map(m => m.interfaceName);
             Object.keys(this.socketConnections).forEach(k => {
-                if (!flattenedMaps.includes(k)) {
+                if (!(k === 'default') && !flattenedMaps.includes(k)) {
                     Logger.debug(
                         `Network interface [${k}] not found. No longer doing discovery for Huddly Cameras on this interface.`,
                         WsDiscovery.name
