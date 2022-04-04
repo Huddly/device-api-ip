@@ -1,3 +1,20 @@
+### 0.2.0 (2022-04-04)
+
+##### Chores
+
+*  fix audit issues with minimist ([6e4cc9f8](https://github.com/Huddly/device-api-ip/commit/6e4cc9f8c0f4dbd8d98a2cfdb3735ffd1e3141e0))
+
+##### New Features
+
+*  Update sdk-interfaces to v0.2.0 ([766d6215](https://github.com/Huddly/device-api-ip/commit/766d62159d39cb2e8a679c3a7e401aaaaa9e6803))
+*  add s1 as part of the supported devices when getting transport implementation ([ae15f86e](https://github.com/Huddly/device-api-ip/commit/ae15f86ec2197984f77c18d0b7c215b0314aad1a))
+*  PID for S1 cameras ([3a3f7319](https://github.com/Huddly/device-api-ip/commit/3a3f73193c2daf5249e5d3497a4cde95321739f7))
+* **wsdiscovery:**  Support discovery of S1 Huddly cameras ([80e45adb](https://github.com/Huddly/device-api-ip/commit/80e45adbaf0a8fd140276a238db12ebe3bc10b41))
+
+##### Bug Fixes
+
+* **wsdiscovery:**  message subscriber should not be an anonymous funtion ([f348a1cc](https://github.com/Huddly/device-api-ip/commit/f348a1cc2454a86f92235c0bc208117f8cd35acf))
+
 #### 0.1.6 (2022-02-18)
 
 ##### Chores
