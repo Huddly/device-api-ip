@@ -196,6 +196,9 @@ export default class WsDiscovery extends EventEmitter {
     }
 
     isDeviceAllowed(deviceIpAddress: string): boolean {
+        // Localhost ip addresses are reserved and not allowed to identify a huddly network camera
+        if (deviceIpAddress === '127.0.0.1') return false;
+
         // This filtering only applies when probing the entire network
         const probeEntireNetwork =
             this.opts.probeEntireNetwork || process.env.HUDDLY_WSDD_PROBE_ENTIRE_NETWORK;
