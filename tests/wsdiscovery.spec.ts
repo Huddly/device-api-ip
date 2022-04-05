@@ -346,6 +346,11 @@ describe('WsDiscovery', () => {
             const allowed = wsdd.isDeviceAllowed('10.1.0.10');
             expect(allowed).to.equal(true);
         });
+        it('should not allow devices with localhost ip address', () => {
+            wsdd = new WsDiscovery(wsddOptions);
+            const allowed = wsdd.isDeviceAllowed('127.0.0.1');
+            expect(allowed).to.equal(false);
+        });
     });
 
     describe('#generateMessageId', () => {
