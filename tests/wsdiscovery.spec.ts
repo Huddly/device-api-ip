@@ -498,7 +498,7 @@ describe('WsDiscovery', () => {
             const msgId: String = '12345';
             const wsddEmitSpy = sinon.spy();
             uuidstub = sinon.stub(uuid, 'v4' as any).returns(msgId);
-            wsdd = new WsDiscovery({ timeout: 10000, socket: dummySocket });
+            wsdd = new WsDiscovery({ timeout: 1000, socket: dummySocket });
             const data: any = {
                 ip: '169.254.98.175',
                 name: 'L1',
@@ -530,7 +530,7 @@ describe('WsDiscovery', () => {
 
             wsdd.on('device', wsddEmitSpy);
             const cb = (devices: HuddlyDevice[]) => {
-                expect(devices.length).to.equal(1);
+                expect(devices.length).to.equal(2);
                 expect(devices[0].ip).to.equal(data.ip);
                 expect(devices[0].serialNumber).to.equal(data.serialNumber);
                 expect(devices[0].name).to.equal(data.name);
@@ -544,8 +544,12 @@ describe('WsDiscovery', () => {
                 expect(wsddEmitSpy.getCall(0).args[0]).to.equal(devices[0]);
                 done();
             };
+
+            const clock = sinon.useFakeTimers();
             wsdd.probe(cb);
             dummySocket.emit('message', Buffer.from(huddlyProbeMatch));
+            clock.tick(1000);
+            clock.restore();
         });
 
         it('should not consider non huddly manufactured devices', done => {
