@@ -31,7 +31,7 @@ export default class WsDiscovery extends EventEmitter {
     constructor(options: any = {}) {
         super();
         this.opts = options;
-        this.opts.timeout = options.timeout || 5000;
+        this.opts.timeout = options.timeout || 1000;
 
         Logger.debug(
             `WsDiscovery initilized with the following options: ${JSON.stringify(this.opts)}`,
@@ -278,7 +278,7 @@ export default class WsDiscovery extends EventEmitter {
         const messageId = this.generateMessageId();
         const body = this.makeDiscoveryBody(messageId);
         const discoveredDevices: HuddlyDevice[] = [];
-        const onProbeResponseHandler = (message: any, probeTimeout: any) => {
+        const onProbeResponseHandler = (message: any) => {
             const tree = et.parse(message.toString());
             const relatesTo = tree.findtext('*/wsa:RelatesTo');
             if (relatesTo === messageId) {
@@ -315,8 +315,6 @@ export default class WsDiscovery extends EventEmitter {
                             discoveredDevices.push(device);
                             this.emit('device', device);
                         }
-                        clearTimeout(probeTimeout);
-                        callback(discoveredDevices);
                     } else {
                         Logger.debug(
                             `Ignoring device at ip address: ${device.ip.toString()}.`,
@@ -343,18 +341,10 @@ export default class WsDiscovery extends EventEmitter {
         }
 
         Object.values(this.socketConnections).forEach(socket => {
-            const probeTimeout = setTimeout(() => {
-                callback(discoveredDevices);
-            }, this.opts.timeout);
-
-            const listener = message => {
-                onProbeResponseHandler(message, probeTimeout);
-            };
-
-            socket.on('message', listener);
+            socket.on('message', onProbeResponseHandler);
 
             setTimeout(() => {
-                socket.removeListener('message', listener);
+                socket.removeListener('message', onProbeResponseHandler);
             }, this.opts.timeout);
 
             this.setTimeoutWithRandomDelay(
@@ -362,6 +352,9 @@ export default class WsDiscovery extends EventEmitter {
                 this.maxDelay
             );
         });
+        setTimeout(() => {
+            callback(discoveredDevices);
+        }, this.opts.timeout);
     }
 
     close() {
