@@ -337,6 +337,11 @@ export default class WsDiscovery extends EventEmitter {
             }
         };
 
+        if (Object.keys(this.socketConnections).length === 0) {
+            callback([]);
+            return;
+        }
+
         Object.values(this.socketConnections).forEach(socket => {
             const probeTimeout = setTimeout(() => {
                 callback(discoveredDevices);

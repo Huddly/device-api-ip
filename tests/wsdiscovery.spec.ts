@@ -637,6 +637,16 @@ describe('WsDiscovery', () => {
             wsdd.probe();
             expect(setTimeoutStub).to.have.not.been.calledOnce;
         });
+
+        it('should run callback with empty list when there is no interfaces to probe', () => {
+            networkInterfacesStub.restore();
+            networkInterfacesStub = sinon.stub(os, 'networkInterfaces' as any).returns({});
+
+            const cb = sinon.stub();
+            wsdd = new WsDiscovery({});
+            wsdd.probe(cb);
+            expect(cb).to.have.been.calledWith([]);
+        });
     });
 
     describe('#close', () => {
