@@ -1,6 +1,6 @@
 {
   "name": "@huddly/device-api-ip",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Huddly SDK device api which uses grpc as transport protocol for communicating with the huddly network/ip cameras",
   "keywords": [
     "API",
