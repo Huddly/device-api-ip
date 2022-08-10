@@ -1,4 +1,12 @@
-### 0.2.0 (2022-04-04)
+### 0.2.1 (2022-08-10)
+
+##### Bug Fixes
+
+*  ws discovery callback only on a timer ([d0d5cb14](https://github.com/Huddly/device-api-ip/commit/d0d5cb14a76894688e1f0aa3b22f7123b7279c6d))
+*  there should be detach event for ip device when base is unplugged ([48da7778](https://github.com/Huddly/device-api-ip/commit/48da7778000fad2023b25e65602b9c942747202b))
+*  Do not pick up devices with localhost ip ([4e60cbf1](https://github.com/Huddly/device-api-ip/commit/4e60cbf159ac382afacad6289e42b8c21bbfcd37))
+
+#### 0.2.0 (2022-04-04)
 
 ##### Chores
 
